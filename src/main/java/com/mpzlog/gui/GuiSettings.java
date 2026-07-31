@@ -13,6 +13,7 @@ public class GuiSettings {
     private static final String WIN_Y = "winY";
     private static final String WIN_W = "winW";
     private static final String WIN_H = "winH";
+    private static final String WIN_MAXIMIZED = "winMaximized";
 
     private final Preferences prefs = Preferences.userNodeForPackage(GuiSettings.class);
 
@@ -45,6 +46,14 @@ public class GuiSettings {
         prefs.putDouble(WIN_Y, y);
         prefs.putDouble(WIN_W, width);
         prefs.putDouble(WIN_H, height);
+    }
+
+    public boolean isWindowMaximized() {
+        return prefs.getBoolean(WIN_MAXIMIZED, false);
+    }
+
+    public void setWindowMaximized(boolean maximized) {
+        prefs.putBoolean(WIN_MAXIMIZED, maximized);
     }
 
     public void flush() {

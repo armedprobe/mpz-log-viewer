@@ -1,0 +1,104 @@
+/* MPZ Log Viewer - modern flat theme */
+
+.root {
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+    -fx-font-size: 13px;
+    -fx-background-color: #f5f6f8;
+    -fx-text-fill: #1c1e21;
+}
+
+/* ---- Toolbar ---- */
+
+.tool-bar {
+    -fx-background-color: #ffffff;
+    -fx-padding: 8 10 8 10;
+    -fx-border-color: transparent transparent #e1e4e8 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+/* ---- Buttons ---- */
+
+.button {
+    -fx-background-color: #f3f4f6;
+    -fx-background-radius: 6;
+    -fx-border-color: #d4d7dd;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-text-fill: #1c1e21;
+    -fx-padding: 5 14 5 14;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #e9ebee;
+}
+
+.button:pressed {
+    -fx-background-color: #dcdfe4;
+}
+
+.button:focused {
+    -fx-border-color: #3a7dff;
+}
+
+/* ---- Text input ---- */
+
+.text-field,
+.text-area {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 6;
+    -fx-border-color: #d4d7dd;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-text-fill: #1c1e21;
+    -fx-highlight-fill: #3a7dff;
+    -fx-highlight-text-fill: #ffffff;
+}
+
+.text-field:focused,
+.text-area:focused {
+    -fx-border-color: #3a7dff;
+    -fx-background-color: #ffffff;
+}
+
+.text-area .content {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 6;
+}
+
+.text-area:focused .content {
+    -fx-background-color: #ffffff;
+}
+
+/* ---- Search panel ---- */
+
+.search-panel {
+    -fx-background-color: #f5f6f8;
+    -fx-padding: 6 10 6 10;
+}
+
+.search-panel .label {
+    -fx-text-fill: #5a5e66;
+}
+
+/* ---- Status bar ---- */
+
+.status-bar {
+    -fx-padding: 2 10 8 10;
+    -fx-text-fill: #6a6e76;
+    -fx-font-size: 12px;
+}
+
+/* ---- Dialogs ---- */
+
+.dialog-pane {
+    -fx-background-color: #ffffff;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: #ffffff;
+}
+
+.dialog-pane .button-bar .container {
+    -fx-background-color: #ffffff;
+}

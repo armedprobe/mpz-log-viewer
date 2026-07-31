@@ -2,6 +2,7 @@ package com.mpzlog.mode;
 
 import com.mpzlog.parser.LogEntry;
 import com.mpzlog.parser.ProcessAnalyzer;
+import com.mpzlog.parser.ProcessElement;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -71,7 +72,7 @@ public class AnalyzeMode implements ModeHandler {
 
     private static int countCriticalErrors(ProcessAnalyzer pa) {
         int count = 0;
-        for (ProcessAnalyzer.ProcessInfo p : pa.getAllProcesses()) {
+        for (ProcessElement p : pa.getAllProcesses()) {
             for (LogEntry e : p.allEntries) {
                 if (isExceptionEntry(e)) count++;
             }
@@ -87,7 +88,7 @@ public class AnalyzeMode implements ModeHandler {
         ctx.getPrinter().printHeader(processCount, totalLines, criticalErrors);
         if (criticalErrors > 0) {
             Map<String, List<LogEntry>> errorGroups = new LinkedHashMap<>();
-            for (ProcessAnalyzer.ProcessInfo p : ctx.getPa().getAllProcesses()) {
+            for (ProcessElement p : ctx.getPa().getAllProcesses()) {
                 for (LogEntry e : p.allEntries) {
                     if (isExceptionEntry(e)) {
                         String key = normalizeKey(errorText(e));
@@ -118,7 +119,7 @@ public class AnalyzeMode implements ModeHandler {
 
             ctx.getPrinter().printErrorProcessesTitle();
             boolean firstProcess = true;
-            for (ProcessAnalyzer.ProcessInfo p : ctx.getPa().getAllProcesses()) {
+            for (ProcessElement p : ctx.getPa().getAllProcesses()) {
                 boolean hasError = false;
                 for (LogEntry e : p.allEntries) {
                     if (isExceptionEntry(e)) {
@@ -131,7 +132,7 @@ public class AnalyzeMode implements ModeHandler {
                     firstProcess = false;
                 }
                 String pname = p.processId != null ? p.processId : "?";
-                String pid = p.pid != null ? p.pid : "?";
+                String pid = p.pidLabel();
                 ctx.getPrinter().printProcessHeader(pid, pname);
                 for (LogEntry e : p.allEntries) {
                     if (!isExceptionEntry(e)) continue;

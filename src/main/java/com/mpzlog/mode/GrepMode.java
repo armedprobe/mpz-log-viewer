@@ -1,7 +1,7 @@
 package com.mpzlog.mode;
 
 import com.mpzlog.parser.LogEntry;
-import com.mpzlog.parser.ProcessAnalyzer;
+import com.mpzlog.parser.ProcessElement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +16,8 @@ public class GrepMode implements ModeHandler {
 
     @Override
     public void execute(ModeContext ctx) {
-        List<ProcessAnalyzer.ProcessInfo> matched = new ArrayList<>();
-        for (ProcessAnalyzer.ProcessInfo p : ctx.getPa().getAllProcesses()) {
+        List<ProcessElement> matched = new ArrayList<>();
+        for (ProcessElement p : ctx.getPa().getAllProcesses()) {
             for (LogEntry e : p.allEntries) {
                 if (e.getMessage() != null && e.getMessage().contains(ctx.getOpts().getGrepText())) {
                     matched.add(p);

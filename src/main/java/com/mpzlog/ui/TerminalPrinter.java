@@ -1,7 +1,7 @@
 package com.mpzlog.ui;
 
 import com.mpzlog.parser.LogEntry;
-import com.mpzlog.parser.ProcessAnalyzer;
+import com.mpzlog.parser.ProcessElement;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -111,9 +111,10 @@ public class TerminalPrinter {
         line("═══════════════════════════════════════════════");
     }
 
-    public void printProcessLine(ProcessAnalyzer.ProcessInfo p) {
+    public void printProcessLine(ProcessElement p) {
         String pname = p.processId != null ? p.processId : "?";
-        line(pname + "=" + p.pid + " запросов/ответов: " + p.reqRespCount + ", строк: " + p.entryCount);
+        line(pname + "=" + p.pidLabel() + " [" + p.status.getLabel() + "] запросов/ответов: "
+                + p.reqRespCount + ", строк: " + p.entryCount);
     }
 
     public void printHeader(int processCount, int totalLines, int criticalErrors) {

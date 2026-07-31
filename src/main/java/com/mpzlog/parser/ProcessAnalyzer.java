@@ -1,15 +1,36 @@
 package com.mpzlog.parser;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Анализирует лог и строит модель в виде дерева элементов.
+ * <p>
+ * Правила атрибуции записей процессу:
+ * <ul>
+ *   <li>старт процесса — {@code handle-request} с {@code process-instance=0};</li>
+ *   <li>следующий за ним {@code handle-response} с новым {@code process-instance}
+ *       определяет PID процесса;</li>
+ *   <li>все последующие {@code handle-request}/{@code handle-response} с этим же
+ *       PID относятся к этому же процессу;</li>
+ *   <li>прочие записи относятся к процессу, только если их task (имя треда)
+ *       совпадает с task у request и они лежат между этим request и следующим
+ *       response;</li>
+ *   <li>если request не завершился response (ошибка или response не найден),
+ *       записи с тем же task после него включаются в процесс, но не те, что
+ *       следуют после response другого процесса с тем же task.</li>
+ * </ul>
+ * Результат — корень дерева {@link #getRoot()} (процессы и непривязанные
+ * записи в порядке лога) и плоский список процессов {@link #getProcesses()}.
+ */
 public class ProcessAnalyzer {
 
     private static final Pattern PI_PATTERN =
@@ -18,7 +39,9 @@ public class ProcessAnalyzer {
             Pattern.compile("<process-id>([^<]+)</process-id>");
 
     private final List<LogEntry> entries;
-    private final Map<String, ProcessInfo> processes = new LinkedHashMap<>();
+    private final List<ProcessElement> processes = new ArrayList<>();
+    private final Map<String, ProcessElement> byPid = new LinkedHashMap<>();
+    private final List<Element> root = new ArrayList<>();
 
     public ProcessAnalyzer(List<LogEntry> entries) {
         this.entries = entries;
@@ -26,143 +49,183 @@ public class ProcessAnalyzer {
     }
 
     private void analyze() {
-        Map<String, ProcessInfo> startByThread = new LinkedHashMap<>();
-        Map<String, ProcessInfo> activeOnThread = new LinkedHashMap<>();
+        Map<String, Deque<ProcessElement>> stackByTask = new LinkedHashMap<>();
 
         for (int i = 0; i < entries.size(); i++) {
             LogEntry e = entries.get(i);
             String msg = e.getMessage();
-            if (msg == null) continue;
+            String pi = msg == null ? null : extractProcessInstance(msg);
+            boolean isRequest = msg != null && msg.contains("handle-request:");
+            boolean isResponse = msg != null && msg.contains("handle-response:");
 
-            String pi = extractProcessInstance(msg);
-            boolean isRequest = msg.contains("handle-request:");
-            boolean isResponse = msg.contains("handle-response:");
-
-            String thread = e.getThreadName();
-            ProcessInfo active = activeOnThread.get(thread);
+            String key = e.getThreadName() != null ? e.getThreadName() : "";
+            Deque<ProcessElement> stack = stackByTask.computeIfAbsent(key, k -> new ArrayDeque<>());
+            ProcessElement top = stack.peek();
 
             if (isRequest && "0".equals(pi)) {
-                ProcessInfo old = startByThread.get(thread);
-                ProcessInfo p = new ProcessInfo(null);
-                if (old != null && old.pid != null) {
-                    p.parentId = old.pid;
-                }
+                ProcessElement p = new ProcessElement();
+                p.task = e.getThreadName();
                 p.processId = extractProcessId(msg);
-                p.startIndices.add(i);
-                p.allEntries.add(e);
-                p.entryCount++;
-                p.reqRespCount++;
-                startByThread.put(thread, p);
-                activeOnThread.put(thread, p);
-            }
-
-            if (isRequest && pi != null && !"0".equals(pi)) {
-                ProcessInfo known = processes.get(pi);
+                p.startIndex = i;
+                p.status = ProcessElement.Status.UNRESOLVED;
+                addHandle(p, e, pi, true);
+                processes.add(p);
+                root.add(p);
+                stack.push(p);
+            } else if (isRequest && pi != null) {
+                ProcessElement known = byPid.get(pi);
                 if (known != null) {
-                    known.allEntries.add(e);
-                    known.entryCount++;
-                    known.reqRespCount++;
-                    activeOnThread.put(thread, known);
-                } else if (active != null) {
-                    active.allEntries.add(e);
-                    active.entryCount++;
-                    active.reqRespCount++;
+                    addHandle(known, e, pi, true);
+                    stack.push(known);
+                } else if (top != null) {
+                    addHandle(top, e, pi, true);
+                } else {
+                    root.add(new LogElement(e, pi, true, false));
                 }
-            }
-
-            if (isResponse && pi != null && !"0".equals(pi)) {
-                ProcessInfo pend = startByThread.get(thread);
-                if (pend != null) {
-                    pend.allEntries.add(e);
-                    pend.entryCount++;
-                    pend.reqRespCount++;
-                    if (pend.pid == null) {
-                        pend.pid = pi;
-                        ProcessInfo existing = processes.get(pi);
-                        if (existing != null) {
-                            mergeInto(existing, pend);
-                        } else {
-                            processes.put(pi, pend);
-                        }
+            } else if (isResponse) {
+                ProcessElement known = pi != null && !"0".equals(pi) ? byPid.get(pi) : null;
+                ProcessElement owner;
+                if (known != null) {
+                    owner = known;
+                    closeOwnerWindow(stack, owner);
+                } else {
+                    owner = findOpenOwner(stack, msg);
+                    if (owner == null && !stack.isEmpty()) {
+                        owner = stack.peekLast();
                     }
-                } else if (active != null) {
-                    active.allEntries.add(e);
-                    active.entryCount++;
-                    active.reqRespCount++;
-                }
-                activeOnThread.put(thread, null);
-            }
-
-            if (isResponse && "0".equals(pi)) {
-                ProcessInfo pend = startByThread.get(thread);
-                if (pend != null && pend.pid == null && pend.parentId != null) {
-                    ProcessInfo parent = processes.get(pend.parentId);
-                    if (parent != null) {
-                        for (LogEntry pe : pend.allEntries) {
-                            parent.allEntries.add(pe);
-                            parent.entryCount++;
-                            if (pe.getMessage() != null
-                                    && (pe.getMessage().contains("handle-request:")
-                                        || pe.getMessage().contains("handle-response:"))) {
-                                parent.reqRespCount++;
+                    if (owner != null) {
+                        ProcessElement stackOwner = owner;
+                        if (owner.pid == null) {
+                            if (pi != null && !"0".equals(pi)) {
+                                ProcessElement existing = byPid.get(pi);
+                                if (existing != null && existing != owner) {
+                                    mergeInto(existing, owner);
+                                    processes.remove(owner);
+                                    root.remove(owner);
+                                    owner = existing;
+                                } else {
+                                    owner.pid = pi;
+                                    byPid.put(pi, owner);
+                                }
+                                owner.status = ProcessElement.Status.COMPLETED;
+                            } else {
+                                owner.status = ProcessElement.Status.FAILED;
                             }
                         }
-                        parent.allEntries.add(e);
-                        parent.entryCount++;
-                        parent.reqRespCount++;
-                    } else if (active != null) {
-                        active.allEntries.add(e);
-                        active.entryCount++;
-                        active.reqRespCount++;
+                        closeOwnerWindow(stack, stackOwner);
                     }
-                } else if (active != null) {
-                    active.allEntries.add(e);
-                    active.entryCount++;
-                    active.reqRespCount++;
                 }
-                activeOnThread.put(thread, null);
-            }
-
-            if (!isRequest && !isResponse) {
-                if (active != null) {
-                    active.allEntries.add(e);
-                    active.entryCount++;
+                if (owner != null) {
+                    addHandle(owner, e, pi, false);
+                } else {
+                    root.add(new LogElement(e, pi, false, true));
+                }
+            } else {
+                if (top != null) {
+                    addRecord(top, e);
+                } else {
+                    root.add(new LogElement(e, null, false, false));
                 }
             }
         }
     }
 
-    private void mergeInto(ProcessInfo target, ProcessInfo source) {
+    private void addHandle(ProcessElement p, LogEntry e, String pid, boolean request) {
+        p.allEntries.add(e);
+        p.entryCount++;
+        p.reqRespCount++;
+        p.children.add(new LogElement(e, pid, request, !request));
+    }
+
+    private void addRecord(ProcessElement p, LogEntry e) {
+        p.allEntries.add(e);
+        p.entryCount++;
+        p.children.add(new LogElement(e, null, false, false));
+    }
+
+    /**
+     * Ищет среди открытых окон треда самый старый процесс с тем же {@code process-id},
+     * что и в сообщении ответа. Если совпадений нет — {@code null}.
+     */
+    private ProcessElement findOpenOwner(Deque<ProcessElement> stack, String msg) {
+        String processId = extractProcessId(msg);
+        if (processId == null) {
+            return null;
+        }
+        ProcessElement oldest = null;
+        for (Iterator<ProcessElement> it = stack.descendingIterator(); it.hasNext(); ) {
+            ProcessElement p = it.next();
+            if (processId.equals(p.processId)) {
+                oldest = p;
+                break;
+            }
+        }
+        return oldest;
+    }
+
+    /**
+     * Закрывает окно владельца и все более старые открытые окна треда (все,
+     * что открыты раньше него — они уже не получат ответ). Младшие окна остаются.
+     */
+    private void closeOwnerWindow(Deque<ProcessElement> stack, ProcessElement owner) {
+        if (!stack.contains(owner)) {
+            return;
+        }
+        for (Iterator<ProcessElement> it = stack.descendingIterator(); it.hasNext(); ) {
+            ProcessElement p = it.next();
+            if (p == owner) {
+                it.remove();
+                break;
+            }
+            it.remove();
+        }
+    }
+
+    private void mergeInto(ProcessElement target, ProcessElement source) {
+        target.children.addAll(source.children);
         target.allEntries.addAll(source.allEntries);
         target.entryCount += source.entryCount;
         target.reqRespCount += source.reqRespCount;
-        target.startIndices.addAll(source.startIndices);
         if (source.processId != null && target.processId == null) {
             target.processId = source.processId;
         }
-        if (source.parentId != null && target.parentId == null) {
-            target.parentId = source.parentId;
-        }
+    }
+
+    /** Плоский список процессов в порядке появления. */
+    public List<ProcessElement> getProcesses() {
+        return processes;
+    }
+
+    /** Плоский список процессов в порядке появления. */
+    public List<ProcessElement> getAllProcesses() {
+        return processes;
+    }
+
+    /** Корень дерева модели лога: процессы и непривязанные записи в порядке лога. */
+    public List<Element> getRoot() {
+        return root;
     }
 
     public List<String> getProcessIds() {
-        return new ArrayList<>(processes.keySet());
+        List<String> ids = new ArrayList<>();
+        for (ProcessElement p : processes) {
+            if (p.pid != null) {
+                ids.add(p.pid);
+            }
+        }
+        return ids;
     }
 
-    public ProcessInfo getProcess(String id) {
-        return processes.get(id);
+    public ProcessElement getProcess(String id) {
+        return byPid.get(id);
     }
 
     public boolean hasProcess(String id) {
-        return processes.containsKey(id);
-    }
-
-    public List<ProcessInfo> getAllProcesses() {
-        return new ArrayList<>(processes.values());
+        return byPid.containsKey(id);
     }
 
     public List<LogEntry> getEntriesForProcess(String id) {
-        ProcessInfo p = processes.get(id);
+        ProcessElement p = byPid.get(id);
         return p != null ? p.allEntries : Collections.emptyList();
     }
 
@@ -174,20 +237,5 @@ public class ProcessAnalyzer {
     private String extractProcessId(String text) {
         Matcher m = PROC_ID_PATTERN.matcher(text);
         return m.find() ? m.group(1) : null;
-    }
-
-    public static class ProcessInfo {
-        public String pid;
-        public String processId;
-        public String parentId;
-        public final Set<String> threads = new LinkedHashSet<>();
-        public final List<LogEntry> allEntries = new ArrayList<>();
-        public final Set<Integer> startIndices = new LinkedHashSet<>();
-        public int entryCount;
-        public int reqRespCount;
-
-        ProcessInfo(String pid) {
-            this.pid = pid;
-        }
     }
 }
