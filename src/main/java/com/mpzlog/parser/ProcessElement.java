@@ -16,7 +16,8 @@ import java.util.List;
 public final class ProcessElement extends Element {
 
     public enum Status {
-        COMPLETED("завершён"),
+        COMPLETED("завершён успешно"),
+        COMPLETED_WITH_ERROR("завершён с ошибкой"),
         INTERRUPTED("прерван"),
         FAILED("ошибка"),
         UNRESOLVED("без ответа");

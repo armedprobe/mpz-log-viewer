@@ -1,23 +1,30 @@
 package com.mpzlog.parser;
 
 import java.time.LocalTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class LogEntry {
+
+    private boolean exception;
+    private String errorText;
+    private String errorKey;
+
     private LocalTime timestamp;
     private String level;
     private String source;
     private String threadName;
     private StringBuilder messageBuf;
     private String message;
-    private final Map<String, String> fields;
     private int lineNumber;
     private String rawLine;
 
-    public LogEntry() {
-        this.fields = new LinkedHashMap<>();
-    }
+    public boolean isException() { return exception; }
+    public void setException(boolean exception) { this.exception = exception; }
+
+    public String getErrorText() { return errorText; }
+    public void setErrorText(String errorText) { this.errorText = errorText; }
+
+    public String getErrorKey() { return errorKey; }
+    public void setErrorKey(String errorKey) { this.errorKey = errorKey; }
 
     public LocalTime getTimestamp() { return timestamp; }
     public void setTimestamp(LocalTime timestamp) { this.timestamp = timestamp; }
@@ -53,9 +60,6 @@ public class LogEntry {
         }
         messageBuf.append(text);
     }
-
-    public Map<String, String> getFields() { return fields; }
-    public void addField(String key, String value) { fields.put(key, value); }
 
     public int getLineNumber() { return lineNumber; }
     public void setLineNumber(int lineNumber) { this.lineNumber = lineNumber; }

@@ -39,15 +39,24 @@ public class ProcessAnalyzer {
             Pattern.compile("<process-id>([^<]+)</process-id>");
     private static final Pattern END_OF_PROCESS_PATTERN =
             Pattern.compile("<type>\\s*END_OF_PROCESS\\s*</type>");
+    private static final Pattern KEY_TOKEN =
+            Pattern.compile("ORA-\\d+|'[^']*'|\\d+");
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
     private final List<LogEntry> entries;
     private final List<ProcessElement> processes = new ArrayList<>();
     private final Map<String, ProcessElement> byPid = new LinkedHashMap<>();
     private final List<Element> root = new ArrayList<>();
+    private int criticalErrors;
 
     public ProcessAnalyzer(List<LogEntry> entries) {
         this.entries = entries;
         analyze();
+    }
+
+    /** Количество критических ошибок (записей с Exception), вычисляется один раз при анализе. */
+    public int getCriticalErrorsCount() {
+        return criticalErrors;
     }
 
     private void analyze() {
@@ -117,7 +126,7 @@ public class ProcessAnalyzer {
                 }
                 if (owner != null) {
                     addHandle(owner, e, pi, false);
-                    updateStatus(owner, endOfProcess);
+                    updateStatus(owner, endOfProcess, isErrorResponse(msg));
                 } else {
                     root.add(new LogElement(e, pi, false, true));
                 }
@@ -129,6 +138,7 @@ public class ProcessAnalyzer {
                 }
             }
         }
+        computeErrorFields();
     }
 
     private void addHandle(ProcessElement p, LogEntry e, String pid, boolean request) {
@@ -146,15 +156,20 @@ public class ProcessAnalyzer {
 
     /**
      * Обновляет статус процесса после получения response.
-     * «Завершён» — только если response содержит {@code <type>END_OF_PROCESS</type>}
-     * (процесс дошёл до конца). Если ответ получен, но такого type нет — процесс
-     * «прерван». Если PID так и не появился — «ошибка».
-     * Уже завершённый процесс не понижается последующими ответами без END_OF_PROCESS.
+     * «Завершён» — response содержит {@code <type>END_OF_PROCESS</type>}.
+     * «Завершён с ошибкой» — response содержит {@code <type>ERROR</type>}
+     *     (штатное завершение с прикладной ошибкой).
+     * «Прерван» — ответ получен, но ни END_OF_PROCESS, ни ERROR не найдены.
+     * «Ошибка» — PID так и не появился (process-instance=0).
+     * Уже завершённый процесс не понижается последующими ответами.
      */
-    private void updateStatus(ProcessElement p, boolean endOfProcess) {
+    private void updateStatus(ProcessElement p, boolean endOfProcess, boolean errorResponse) {
         if (endOfProcess) {
             p.status = ProcessElement.Status.COMPLETED;
-        } else if (p.status != ProcessElement.Status.COMPLETED) {
+        } else if (errorResponse) {
+            p.status = ProcessElement.Status.COMPLETED_WITH_ERROR;
+        } else if (p.status != ProcessElement.Status.COMPLETED
+                && p.status != ProcessElement.Status.COMPLETED_WITH_ERROR) {
             if (p.pid == null) {
                 p.status = ProcessElement.Status.FAILED;
             } else {
@@ -165,6 +180,76 @@ public class ProcessAnalyzer {
 
     private boolean isEndOfProcess(String msg) {
         return msg != null && END_OF_PROCESS_PATTERN.matcher(msg).find();
+    }
+
+    private static final Pattern ERROR_PATTERN =
+            Pattern.compile("<type>\\s*ERROR\\s*</type>");
+
+    private boolean isErrorResponse(String msg) {
+        return msg != null && ERROR_PATTERN.matcher(msg).find();
+    }
+
+    /**
+     * Вычисляет и сохраняет в каждой записи поля ошибки:
+     * {@link LogEntry#exception}, {@link LogEntry#errorText}, {@link LogEntry#errorKey}.
+     */
+    private void computeErrorFields() {
+        criticalErrors = 0;
+        for (LogEntry e : entries) {
+            e.setException(isExceptionEntry(e));
+            if (e.isException()) {
+                criticalErrors++;
+                e.setErrorText(extractErrorText(e));
+                e.setErrorKey(normalizeKey(e.getErrorText()));
+            }
+        }
+    }
+
+    static boolean isExceptionEntry(LogEntry e) {
+        String msg = e.getMessage();
+        if (msg == null) return false;
+        return e.getFirstLine().contains("Exception") && !e.getFirstLine().startsWith("Caused by");
+    }
+
+    static String extractErrorText(LogEntry e) {
+        String msg = e.getMessage();
+        if (msg == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (String line : msg.split("\n")) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("at ") && !trimmed.startsWith("at by.softclub.mpz.")) break;
+            if (sb.length() > 0) sb.append('\n');
+            sb.append(line);
+        }
+        return sb.toString();
+    }
+
+    static String normalizeKey(String s) {
+        StringBuilder masked = new StringBuilder(s.length());
+        Matcher m = KEY_TOKEN.matcher(s);
+        int last = 0;
+        while (m.find()) {
+            masked.append(s, last, m.start());
+            String token = m.group();
+            if (token.startsWith("ORA-")) {
+                masked.append(token);
+            } else if (token.startsWith("'")) {
+                masked.append("'?'");
+            } else {
+                masked.append("#");
+            }
+            last = m.end();
+        }
+        masked.append(s, last, s.length());
+
+        StringBuilder sb = new StringBuilder(masked.length());
+        for (String line : masked.toString().split("\n")) {
+            String trimmed = WHITESPACE_PATTERN.matcher(line).replaceAll(" ").trim();
+            if (trimmed.isEmpty()) continue;
+            if (sb.length() > 0) sb.append('\n');
+            sb.append(trimmed);
+        }
+        return sb.toString();
     }
 
     /**
