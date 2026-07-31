@@ -42,6 +42,14 @@ public final class ProcessElement extends Element {
     public int reqRespCount;
 
     public String pidLabel() {
-        return pid != null ? pid : "—";
+        return pid != null ? pid : "#0";
+    }
+
+    /** Номер первой строки журнала, относящейся к процессу. */
+    public int firstLineNumber() {
+        if (allEntries.isEmpty()) {
+            return 0;
+        }
+        return allEntries.get(0).getLineNumber();
     }
 }

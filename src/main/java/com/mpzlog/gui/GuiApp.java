@@ -93,6 +93,10 @@ public class GuiApp extends Application {
         processButton.setTooltip(new Tooltip("Показать записи процесса МПЗ по process-instance (Ctrl+P)"));
         processButton.setOnAction(e -> showProcessDialog(stage));
 
+        Button listButton = new Button("Список процессов", listIcon());
+        listButton.setTooltip(new Tooltip("Список процессов МПЗ текущего файла (Ctrl+L)"));
+        listButton.setOnAction(e -> showListProcesses());
+
         Button grepButton = new Button("Grep", grepIcon());
         grepButton.setTooltip(new Tooltip("Найти процессы МПЗ, содержащие строку (Ctrl+G)"));
         grepButton.setOnAction(e -> showGrepDialog(stage));
@@ -105,10 +109,11 @@ public class GuiApp extends Application {
         HBox.setHgrow(spacer, Priority.ALWAYS);
         spacer.setMaxWidth(Double.MAX_VALUE);
 
-        ToolBar toolBar = new ToolBar(openButton, processButton, grepButton, spacer, exitButton);
+        ToolBar toolBar = new ToolBar(openButton, processButton, listButton, grepButton, spacer, exitButton);
         toolBar.setStyle("-fx-padding: 8 10 8 10;");
         HBox.setHgrow(openButton, Priority.NEVER);
         HBox.setHgrow(processButton, Priority.NEVER);
+        HBox.setHgrow(listButton, Priority.NEVER);
         HBox.setHgrow(grepButton, Priority.NEVER);
         HBox.setHgrow(exitButton, Priority.NEVER);
 
@@ -150,6 +155,9 @@ public class GuiApp extends Application {
         scene.getAccelerators().put(
                 new KeyCodeCombination(KeyCode.P, KeyCombination.CONTROL_DOWN),
                 processButton::fire);
+        scene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.L, KeyCombination.CONTROL_DOWN),
+                listButton::fire);
         scene.getAccelerators().put(
                 new KeyCodeCombination(KeyCode.G, KeyCombination.CONTROL_DOWN),
                 grepButton::fire);
@@ -289,6 +297,20 @@ public class GuiApp extends Application {
         process(currentPath, opts);
     }
 
+    private void showListProcesses() {
+        if (currentPath == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING,
+                    "Сначала откройте лог-файл.", ButtonType.OK);
+            alert.setTitle("MPZ Log Viewer");
+            alert.setHeaderText("Файл не выбран");
+            alert.showAndWait();
+            return;
+        }
+        ModeOptions opts = new ModeOptions();
+        opts.setListProcesses(true);
+        process(currentPath, opts);
+    }
+
     private void findInOutput(String query, boolean forward) {
         if (query == null || query.isEmpty()) {
             return;
@@ -362,6 +384,20 @@ public class GuiApp extends Application {
         stem.setStroke(ICON_COLOR);
         stem.setStrokeWidth(1.4);
         g.getChildren().addAll(outer, inner, stem);
+        return iconIn(g);
+    }
+
+    private static Node listIcon() {
+        Group g = new Group();
+        for (int i = 0; i < 3; i++) {
+            double y = 4 + i * 4.5;
+            Circle bullet = new Circle(3.2, y, 1.6);
+            bullet.setFill(ICON_COLOR);
+            Line line = new Line(6.2, y, 14, y);
+            line.setStroke(ICON_COLOR);
+            line.setStrokeWidth(1.4);
+            g.getChildren().addAll(bullet, line);
+        }
         return iconIn(g);
     }
 

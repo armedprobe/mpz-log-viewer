@@ -132,8 +132,7 @@ public class AnalyzeMode implements ModeHandler {
                     firstProcess = false;
                 }
                 String pname = p.processId != null ? p.processId : "?";
-                String pid = p.pidLabel();
-                ctx.getPrinter().printProcessHeader(pid, pname);
+                ctx.getPrinter().printProcessHeader(p); 
                 for (LogEntry e : p.allEntries) {
                     if (!isExceptionEntry(e)) continue;
                     String msg = e.getMessage();

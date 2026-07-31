@@ -106,49 +106,47 @@ public class TerminalPrinter {
     }
     
     public void printTotalTime(long parseTimeMs) {
-        line("═══════════════════════════════════════════════");
+        line();
         line("Время парсинга: " + parseTimeMs + " мс");
-        line("═══════════════════════════════════════════════");
     }
 
     public void printProcessLine(ProcessElement p) {
-        String pname = p.processId != null ? p.processId : "?";
-        line(pname + "=" + p.pidLabel() + " [" + p.status.getLabel() + "] запросов/ответов: "
-                + p.reqRespCount + ", строк: " + p.entryCount);
+        line(processLabel(p.pidLabel(), p.processId) + " [" + p.status.getLabel() + "] запросов/ответов: "
+                + p.reqRespCount + ", первая строка: #" + p.firstLineNumber());
+    }
+
+    public String processLabel(String pid, String pname) {
+        return "PID: " + pid + " (" + (pname != null ? pname : "?") + ")";
     }
 
     public void printHeader(int processCount, int totalLines, int criticalErrors) {
-        line("═════════════════════════════════════════════");
-        line("MPZ Log Viewer");
-        line("═════════════════════════════════════════════");
-        line("Процессов МПЗ: " + processCount);
-        line("Всего строк: " + totalLines);
-        line("Критических ошибок: " + criticalErrors);
+        line("Процессов МПЗ      : " + processCount);
+        line("Всего строк        : " + totalLines);
+        line("Критических ошибок : " + criticalErrors);
     }
 
+    public void printHeader(int processCount) {
+        line("Процессов МПЗ : " + processCount);
+    }
+    
     public void printHeader(String process) {
-        line("═════════════════════════════════════════════");
-        line("MPZ Log Viewer");
-        line("═════════════════════════════════════════════");
-        line("Процесс МПЗ: " + process);
-        line("═════════════════════════════════════════════");
+        line("Процесс МПЗ : " + process);
+        line();
     }
     
     public void printErrorProcessesTitle() {
-        line("═════════════════════════════════════════════");
-        line("Ошибочные процессы МПЗ:");
+        line();
+        line("Процессы МПЗ с ошибками :");
     }
 
     public void printFrequentErrorsTitle() {
-        line("");
-        line("═════════════════════════════════════════════");
-        line(" Часто встречающиеся ошибки");
-        line("═════════════════════════════════════════════");
+        line();
+        line("Найденные ошибки :");
+        line();
     }
 
-    public void printProcessHeader(String pid, String pname) {
-        line("═════════════════════════════════════════════");
-        line("Процесс: " + pid + " (" + pname + ")");
-        line("═════════════════════════════════════════════");
+    public void printProcessHeader(ProcessElement p) {
+        line();
+        printProcessLine(p);
     }
 }

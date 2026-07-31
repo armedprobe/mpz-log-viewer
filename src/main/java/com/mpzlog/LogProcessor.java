@@ -38,9 +38,6 @@ public final class LogProcessor {
             return;
         }
 
-        printer.line();
-        printer.line("Файл: " + path.toAbsolutePath() + " (" + formatSize(fileSize) + ")");
-
         MpzLogParser parser = new MpzLogParser();
         try {
             parser.parse(path);
