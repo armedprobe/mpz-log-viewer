@@ -17,6 +17,7 @@ public final class ProcessElement extends Element {
 
     public enum Status {
         COMPLETED("завершён"),
+        INTERRUPTED("прерван"),
         FAILED("ошибка"),
         UNRESOLVED("без ответа");
 

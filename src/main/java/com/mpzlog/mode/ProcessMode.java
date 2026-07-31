@@ -13,7 +13,7 @@ public class ProcessMode implements ModeHandler {
             ctx.getPrinter().close();
             return;
         }
-        ctx.getPrinter().printHeader(ctx.getOpts().getProcessId());
+        ctx.getPrinter().printProcessLine(ctx.getPa().getProcess(ctx.getOpts().getProcessId()));
         List<LogEntry> processEntries = ctx.getPa().getEntriesForProcess(ctx.getOpts().getProcessId());
         ctx.getPrinter().printEntries(processEntries);
         ctx.getPrinter().printTotalTime(ctx.getParser().getParseTimeMs());

@@ -8,6 +8,8 @@ import java.util.List;
 
 public class GrepMode implements ModeHandler {
 
+    public static final int GREP_LIMIT = 25;
+
     private final int limit;
 
     public GrepMode(int limit) {

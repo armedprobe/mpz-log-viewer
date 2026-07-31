@@ -129,11 +129,6 @@ public class TerminalPrinter {
         line("Процессов МПЗ : " + processCount);
     }
     
-    public void printHeader(String process) {
-        line("Процесс МПЗ : " + process);
-        line();
-    }
-    
     public void printErrorProcessesTitle() {
         line();
         line("Процессы МПЗ с ошибками :");

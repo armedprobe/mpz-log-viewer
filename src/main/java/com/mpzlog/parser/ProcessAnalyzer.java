@@ -37,6 +37,8 @@ public class ProcessAnalyzer {
             Pattern.compile("<process-instance>(\\d+)</process-instance>");
     private static final Pattern PROC_ID_PATTERN =
             Pattern.compile("<process-id>([^<]+)</process-id>");
+    private static final Pattern END_OF_PROCESS_PATTERN =
+            Pattern.compile("<type>\\s*END_OF_PROCESS\\s*</type>");
 
     private final List<LogEntry> entries;
     private final List<ProcessElement> processes = new ArrayList<>();
@@ -83,6 +85,7 @@ public class ProcessAnalyzer {
                     root.add(new LogElement(e, pi, true, false));
                 }
             } else if (isResponse) {
+                boolean endOfProcess = isEndOfProcess(msg);
                 ProcessElement known = pi != null && !"0".equals(pi) ? byPid.get(pi) : null;
                 ProcessElement owner;
                 if (known != null) {
@@ -107,9 +110,6 @@ public class ProcessAnalyzer {
                                     owner.pid = pi;
                                     byPid.put(pi, owner);
                                 }
-                                owner.status = ProcessElement.Status.COMPLETED;
-                            } else {
-                                owner.status = ProcessElement.Status.FAILED;
                             }
                         }
                         closeOwnerWindow(stack, stackOwner);
@@ -117,6 +117,7 @@ public class ProcessAnalyzer {
                 }
                 if (owner != null) {
                     addHandle(owner, e, pi, false);
+                    updateStatus(owner, endOfProcess);
                 } else {
                     root.add(new LogElement(e, pi, false, true));
                 }
@@ -141,6 +142,29 @@ public class ProcessAnalyzer {
         p.allEntries.add(e);
         p.entryCount++;
         p.children.add(new LogElement(e, null, false, false));
+    }
+
+    /**
+     * Обновляет статус процесса после получения response.
+     * «Завершён» — только если response содержит {@code <type>END_OF_PROCESS</type>}
+     * (процесс дошёл до конца). Если ответ получен, но такого type нет — процесс
+     * «прерван». Если PID так и не появился — «ошибка».
+     * Уже завершённый процесс не понижается последующими ответами без END_OF_PROCESS.
+     */
+    private void updateStatus(ProcessElement p, boolean endOfProcess) {
+        if (endOfProcess) {
+            p.status = ProcessElement.Status.COMPLETED;
+        } else if (p.status != ProcessElement.Status.COMPLETED) {
+            if (p.pid == null) {
+                p.status = ProcessElement.Status.FAILED;
+            } else {
+                p.status = ProcessElement.Status.INTERRUPTED;
+            }
+        }
+    }
+
+    private boolean isEndOfProcess(String msg) {
+        return msg != null && END_OF_PROCESS_PATTERN.matcher(msg).find();
     }
 
     /**

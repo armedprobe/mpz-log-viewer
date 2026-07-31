@@ -4,12 +4,10 @@
 
 Утилита для чтения и анализа лог-файлов МПЗ (MpzLog). Парсит структурированные логи Java-приложения, выделяет процессы МПЗ и позволяет фильтровать/просматривать их.
 
-**Сборка:** Maven, Java 8 (target 1.8). GUI использует JavaFX 8, встроенную в JDK 8 — запуск окна только под JDK/JRE 8. 
+**Сборка:** Maven, Java 8 (target 1.8). GUI использует JavaFX 8, встроенную в JDK 8 — запуск окна только под JDK/JRE 8. Приложение GUI-only (CLI-вход удалён).
 **Структура:**
-- `CliParser.java` — парсинг CLI-аргументов
-- `ModeOptions.java` — хранилище опций режима
-- `App.java` — CLI-точка входа
-- `LogProcessor.java` — общий конвейер обработки (проверка файла → парсинг → ProcessAnalyzer → запуск режима); используется и CLI, и GUI
+- `ModeOptions.java` — хранилище опций режима (используется только GUI)
+- `LogProcessor.java` — общий конвейер обработки (проверка файла → парсинг → ProcessAnalyzer → запуск режима); используется только GUI
 - `gui/GuiApp.java` — главный класс (JavaFX): тулбар (Открыть файл / Процесс / Список процессов / Grep / Выйти, с векторными иконками) + TextArea вывода; внизу над статус-баром — панель поиска («Поиск:» + поле ~1/4 ширины окна (мин. 100 px) + «Далее» / «Предыдущий»), выделяет найденную строку в выводе; Ctrl+F — фокус в поле поиска; заголовок окна — «MPZ Log Viewer» (без имени файла), иконка приложения рисуется программно. Стили — `src/main/resources/gui/app.css` (плоская современная тема вместо дефолтных градиентов Caspian). Между запусками сохраняется положение/размер окна и состояние «максимизировано/обычное» (`GuiSettings`, Windows Preferences/реестр); при максимизации обычные (немасимизированные) границы не перезаписываются.
 - `gui/GuiSettings.java` — сохранение состояния GUI (последняя папка, границы и состояние «максимизировано/обычное» окна) через `java.util.prefs.Preferences`
 - `mode/ModeHandler.java` — интерфейс режима
@@ -27,20 +25,14 @@
 - `parser/ProcessElement.java` — узел-процесс МПЗ (PID, status, дерево элементов, счётчики)
 - `ui/TerminalPrinter.java` — вывод в консоль, файл и GUI (через `PrintWriter`); `processLabel` — единый формат идентификатора процесса
 
-## CLI Arguments
+## Режимы
 
-| Флаг | Описание |
-|------|----------|
-| `-h`, `--help` | Справка |
-| `-a`, `--analyze` | Сводная информация о логе (по умолчанию) |
-| `-p`, `--process <id>` | Показать записи процесса МПЗ |
-| `-g`, `--grep <text>` | Поиск процессов по тексту в записях |
-| `-lp`, `--list-processes` | Список процессов МПЗ (с пометкой статуса; процессы без PID — `PID: #0 ...`) |
-| `-of`, `--output-file` | Сохранить вывод в файл (плоский текст) |
+Режим выбирается через GUI-диалоги: «Процесс» → `ProcessMode` (`-p`), «Grep» → `GrepMode` (`-g`),
+«Список процессов» → `ListProcessesMode` (`-lp`); открытие файла и «Анализ» используют `AnalyzeMode` (`-a`, по умолчанию).
+`ModeOptions` хранит выбранный режим и его параметры (`setProcessId`, `setGrepText`, `setListProcesses`, `setAnalyze`).
+`ModeFactory` выбирает режим по `ModeOptions`; для `-g` лимит вывода — `GrepMode.GREP_LIMIT = 25`.
 
-Для режима `-g` выходной файл имеет суффикс `_grep_<текст>.txt`, где символы, недопустимые в именах файлов (`<>:"/\|?*` и контрольные символы), заменяются на `_`.
-
-Если не указан ни один режим, по умолчанию используется `-a` (`ModeOptions.isDefault()`).
+Если не выбран ни один режим, по умолчанию используется `-a` (`ModeOptions.isDefault()`).
 
 ## ProcessAnalyzer — Алгоритм
 
@@ -68,9 +60,11 @@
   `allEntries` с счётчиками `entryCount`/`reqRespCount`.
 
 Статусы процесса (`ProcessElement.Status`):
-- `COMPLETED` — получен PID из ответа;
+- `COMPLETED` — получен PID и response с `<result><type>END_OF_PROCESS</type></result>` (процесс дошёл до конца);
+- `INTERRUPTED` — получен PID, но response с `END_OF_PROCESS` не найден (процесс до конца не дошёл, прерван);
 - `FAILED` — ошибка: на стартовый request пришёл response с `process-instance=0`, PID так и не появился;
 - `UNRESOLVED` — response не найден (запрос не завершился ответом); в процесс включены хвостовые записи того же треда.
+Статус `COMPLETED` не понижается последующими response без `END_OF_PROCESS` (повторные вызовы к завершённому процессу).
 
 Единый формат вывода процесса в режимах `-a`, `-lp`, `-g`: `PID: <process-instance> (<process-id>)` — сначала PID,
 затем имя процесса в скобках. Процессы без PID выводятся как `PID: #0 (<process-id>)` (`ProcessElement.pidLabel()`).
@@ -154,26 +148,22 @@ PID: <PID> (<process-name>)
 ```bash
 mvn clean package
 java -jar target/mpz-log-viewer-1.0.0.jar                     # GUI (главный класс gui.GuiApp), только JDK 8
-java -cp target/mpz-log-viewer-1.0.0.jar com.mpzlog.App mpz.log          # CLI: анализ (по умолчанию)
-java -cp target/mpz-log-viewer-1.0.0.jar com.mpzlog.App mpz.log -lp      # CLI: список процессов
-java -cp target/mpz-log-viewer-1.0.0.jar com.mpzlog.App mpz.log -p 8092830 -of   # CLI: процесс в файл
-java -cp target/mpz-log-viewer-1.0.0.jar com.mpzlog.App mpz.log -a -of    # CLI: анализ в файл
-java -cp target/mpz-log-viewer-1.0.0.jar com.mpzlog.App mpz.log -of       # CLI: анализ в файл
 ```
 
 ## Известные ограничения
 
 - Для процессов с `pi=0` в response (ошибка) — две записи с `pi=0` (request и response)
 - Процессы, не получившие response (в т.ч. на границах обрезанного лога), помечаются `[без ответа]`
+- Процессы, получившие PID, но не дошедшие до `END_OF_PROCESS`, помечаются `[прерван]` (например, на границе обрезанного лога)
 - GUI требует JDK/JRE 8: JavaFX 8 не входит в Java 11+
 - Вывод в консоль на Windows может не отображать кириллицу (зависит от кодировки терминала); в GUI кириллица отображается корректно
 
 ## TODO / Возможные улучшения
 
-- [ ] Фильтр по `process-id` (имени процесса, не PID): `java -jar viewer.jar log -n PRC_VIEW_CLAIM`
+- [ ] Фильтр по `process-id` (имени процесса, не PID) в GUI
 - [ ] Группировка процессов по `process-name` в `-lp`
 - [ ] Статистика по `process-name` в `-a` (сколько запусков, ошибок)
-- [ ] Аргумент `--limit <N>` для `-g` (сейчас константа `App.GREP_LIMIT = 25`)
+- [ ] Аргумент `--limit <N>` для `-g` (сейчас константа `GrepMode.GREP_LIMIT = 25`)
 - [ ] `-pt`, `--passthrough` — вывод как в оригинальном логе (без парсинга)
 - [ ] `-t`, `--tail <N>` — последние N записей
 - [ ] `-l`, `--level <levels>` — фильтр по уровню логирования
