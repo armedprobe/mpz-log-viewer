@@ -16,8 +16,6 @@ public class ProcessMode implements ModeHandler {
         ctx.getPrinter().printProcessLine(ctx.getPa().getProcess(ctx.getOpts().getProcessId()));
         List<LogEntry> processEntries = ctx.getPa().getEntriesForProcess(ctx.getOpts().getProcessId());
         ctx.getPrinter().printEntries(processEntries);
-        ctx.getPrinter().printTotalTime(ctx.getParser().getParseTimeMs());
         ctx.getPrinter().close();
-        ctx.getPrinter().printSaved(ctx.getOutputFile());
     }
 }

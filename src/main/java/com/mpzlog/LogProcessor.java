@@ -16,17 +16,17 @@ public final class LogProcessor {
     private LogProcessor() {
     }
 
-    public static void process(Path path, ModeOptions opts, TerminalPrinter printer, Path outputFile) {
+    public static long process(Path path, ModeOptions opts, TerminalPrinter printer, Path outputFile) {
         if (!Files.exists(path)) {
             printer.line("Файл не найден: " + path.toAbsolutePath());
             printer.close();
-            return;
+            return 0;
         }
 
         if (!Files.isReadable(path)) {
             printer.line("Нет доступа для чтения: " + path.toAbsolutePath());
             printer.close();
-            return;
+            return 0;
         }
 
         long fileSize;
@@ -35,7 +35,7 @@ public final class LogProcessor {
         } catch (IOException e) {
             printer.line("Ошибка чтения файла: " + e.getMessage());
             printer.close();
-            return;
+            return 0;
         }
 
         MpzLogParser parser = new MpzLogParser();
@@ -44,7 +44,7 @@ public final class LogProcessor {
         } catch (IOException e) {
             printer.line("Ошибка при парсинге: " + e.getMessage());
             printer.close();
-            return;
+            return 0;
         }
 
         if (opts.isDefault()) {
@@ -55,6 +55,7 @@ public final class LogProcessor {
         ModeHandler mode = ModeFactory.create(opts);
         mode.execute(new ModeContext(pa, parser.getEntries(), printer,
                 outputFile, parser, opts));
+        return parser.getParseTimeMs();
     }
 
     private static String formatSize(long bytes) {

@@ -39,6 +39,8 @@ public class ProcessAnalyzer {
             Pattern.compile("<process-id>([^<]+)</process-id>");
     private static final Pattern END_OF_PROCESS_PATTERN =
             Pattern.compile("<type>\\s*END_OF_PROCESS\\s*</type>");
+    private static final Pattern ERROR_PATTERN =
+            Pattern.compile("<type>\\s*ERROR\\s*</type>");
     private static final Pattern KEY_TOKEN =
             Pattern.compile("ORA-\\d+|'[^']*'|\\d+");
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
@@ -181,9 +183,6 @@ public class ProcessAnalyzer {
     private boolean isEndOfProcess(String msg) {
         return msg != null && END_OF_PROCESS_PATTERN.matcher(msg).find();
     }
-
-    private static final Pattern ERROR_PATTERN =
-            Pattern.compile("<type>\\s*ERROR\\s*</type>");
 
     private boolean isErrorResponse(String msg) {
         return msg != null && ERROR_PATTERN.matcher(msg).find();

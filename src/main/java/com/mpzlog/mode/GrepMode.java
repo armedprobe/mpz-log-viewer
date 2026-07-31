@@ -41,6 +41,5 @@ public class GrepMode implements ModeHandler {
             }
         }
         ctx.getPrinter().close();
-        ctx.getPrinter().printSaved(ctx.getOutputFile());
     }
 }

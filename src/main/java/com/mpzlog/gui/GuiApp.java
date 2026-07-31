@@ -520,13 +520,15 @@ public class GuiApp extends Application {
             if (opts.isDefault()) {
                 opts.setAnalyze(true);
             }
-            LogProcessor.process(path, opts, printer, null);
+            long parseTimeMs = LogProcessor.process(path, opts, printer, null);
             Platform.runLater(() -> {
                 if (seq != openSeq) {
                     return;
                 }
                 outputArea.selectRange(0, 0);
                 outputArea.positionCaret(0);
+                statusBar.setText(statusBar.getText()
+                        + "   |   Время парсинга: " + parseTimeMs + " мс");
             });
         }, "mpz-log-worker");
         worker.setDaemon(true);

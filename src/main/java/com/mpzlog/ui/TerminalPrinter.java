@@ -83,10 +83,6 @@ public class TerminalPrinter {
         }
     }
 
-    public void line() {
-        line("");
-    }
-
     public void line(String s) {
         if (console != null) {
             console.println(s);
@@ -97,19 +93,7 @@ public class TerminalPrinter {
             fileWriter.println(s);
         }
     }
-
-    public void printSaved(Path outputFile) {
-        if (outputFile != null) {
-            System.out.println();
-            System.out.println("Результат сохранён в файл: " + outputFile.toAbsolutePath());
-        }
-    }
-    
-    public void printTotalTime(long parseTimeMs) {
-        line();
-        line("Время парсинга: " + parseTimeMs + " мс");
-    }
-
+  
     public void printProcessLine(ProcessElement p) {
         line(processLabel(p.pidLabel(), p.processId) + " [" + p.status.getLabel() + "] запросов/ответов: "
                 + p.reqRespCount + ", первая строка: #" + p.firstLineNumber());
@@ -129,19 +113,8 @@ public class TerminalPrinter {
         line("Процессов МПЗ : " + processCount);
     }
     
-    public void printErrorProcessesTitle() {
-        line();
-        line("Процессы МПЗ с ошибками :");
-    }
-
-    public void printFrequentErrorsTitle() {
-        line();
-        line("Найденные ошибки :");
-        line();
-    }
-
     public void printProcessHeader(ProcessElement p) {
-        line();
+        line("");
         printProcessLine(p);
     }
 }

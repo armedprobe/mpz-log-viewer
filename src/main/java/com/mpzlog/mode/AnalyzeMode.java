@@ -40,7 +40,9 @@ public class AnalyzeMode implements ModeHandler {
                     .collect(Collectors.toList());
 
             if (!topErrors.isEmpty()) {
-                ctx.getPrinter().printFrequentErrorsTitle();
+                ctx.getPrinter().line("");
+                ctx.getPrinter().line("Найденные ошибки :");
+                ctx.getPrinter().line("");
                 for (Map.Entry<String, List<LogEntry>> group : topErrors) {
                     String masked = group.getKey();
                     if (masked.isEmpty()) {
@@ -54,7 +56,8 @@ public class AnalyzeMode implements ModeHandler {
                 }
             }
 
-            ctx.getPrinter().printErrorProcessesTitle();
+            ctx.getPrinter().line("");
+            ctx.getPrinter().line("Процессы МПЗ с ошибками :");
             boolean firstProcess = true;
             for (ProcessElement p : ctx.getPa().getAllProcesses()) {
                 boolean hasError = false;
@@ -90,8 +93,6 @@ public class AnalyzeMode implements ModeHandler {
                 }
             }
         }
-        ctx.getPrinter().printTotalTime(ctx.getParser().getParseTimeMs());
         ctx.getPrinter().close();
-        ctx.getPrinter().printSaved(ctx.getOutputFile());
     }
 }

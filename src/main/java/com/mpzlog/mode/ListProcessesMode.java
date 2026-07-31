@@ -17,8 +17,6 @@ public class ListProcessesMode implements ModeHandler {
                 ctx.getPrinter().printProcessLine(p);
             }
         }
-        ctx.getPrinter().printTotalTime(ctx.getParser().getParseTimeMs());
         ctx.getPrinter().close();
-        ctx.getPrinter().printSaved(ctx.getOutputFile());
     }
 }
