@@ -15,9 +15,15 @@ public class TerminalPrinter {
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss,SSS");
 
+    private final PrintWriter console;
     private PrintWriter fileWriter;
 
     public TerminalPrinter() {
+        this.console = null;
+    }
+
+    public TerminalPrinter(PrintWriter console) {
+        this.console = console;
     }
 
     public void setOutputFile(Path filePath) throws IOException {
@@ -77,8 +83,16 @@ public class TerminalPrinter {
         }
     }
 
+    public void line() {
+        line("");
+    }
+
     public void line(String s) {
-        System.out.println(s);
+        if (console != null) {
+            console.println(s);
+        } else {
+            System.out.println(s);
+        }
         if (fileWriter != null) {
             fileWriter.println(s);
         }

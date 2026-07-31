@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -16,14 +17,50 @@ public class AnalyzeMode implements ModeHandler {
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("HH:mm:ss,SSS");
 
-    private static final Pattern DIGITS_PATTERN = Pattern.compile("\\d+");
-    private static final Pattern QUOTED_VALUE_PATTERN = Pattern.compile("'[^']*'");
+    private static final String CONTINUATION_INDENT = "             ";
+
+    private static final Pattern KEY_TOKEN =
+            Pattern.compile("ORA-\\d+|'[^']*'|\\d+");
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
     private static String normalizeKey(String s) {
-        String normalized = DIGITS_PATTERN.matcher(s).replaceAll("#");
-        normalized = QUOTED_VALUE_PATTERN.matcher(normalized).replaceAll("'?'");
-        return WHITESPACE_PATTERN.matcher(normalized).replaceAll(" ").trim();
+        StringBuilder masked = new StringBuilder(s.length());
+        Matcher m = KEY_TOKEN.matcher(s);
+        int last = 0;
+        while (m.find()) {
+            masked.append(s, last, m.start());
+            String token = m.group();
+            if (token.startsWith("ORA-")) {
+                masked.append(token);
+            } else if (token.startsWith("'")) {
+                masked.append("'?'");
+            } else {
+                masked.append("#");
+            }
+            last = m.end();
+        }
+        masked.append(s, last, s.length());
+
+        StringBuilder sb = new StringBuilder(masked.length());
+        for (String line : masked.toString().split("\n")) {
+            String trimmed = WHITESPACE_PATTERN.matcher(line).replaceAll(" ").trim();
+            if (trimmed.isEmpty()) continue;
+            if (sb.length() > 0) sb.append('\n');
+            sb.append(trimmed);
+        }
+        return sb.toString();
+    }
+
+    private static String errorText(LogEntry e) {
+        String msg = e.getMessage();
+        if (msg == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (String line : msg.split("\n")) {
+            if (line.trim().startsWith("at ")) break;
+            if (sb.length() > 0) sb.append('\n');
+            sb.append(line);
+        }
+        return sb.toString();
     }
 
     private static boolean isExceptionEntry(LogEntry e) {
@@ -53,7 +90,7 @@ public class AnalyzeMode implements ModeHandler {
             for (ProcessAnalyzer.ProcessInfo p : ctx.getPa().getAllProcesses()) {
                 for (LogEntry e : p.allEntries) {
                     if (isExceptionEntry(e)) {
-                        String key = normalizeKey(e.getFirstLine());
+                        String key = normalizeKey(errorText(e));
                         errorGroups.computeIfAbsent(key, k -> new ArrayList<>()).add(e);
                     }
                 }
@@ -67,11 +104,15 @@ public class AnalyzeMode implements ModeHandler {
             if (!topErrors.isEmpty()) {
                 ctx.getPrinter().printFrequentErrorsTitle();
                 for (Map.Entry<String, List<LogEntry>> group : topErrors) {
-                    String key = group.getKey();
-                    if (key.isEmpty()) {
-                        key = group.getValue().get(0).getFirstLine();
+                    String masked = group.getKey();
+                    if (masked.isEmpty()) {
+                        masked = normalizeKey(errorText(group.getValue().get(0)));
                     }
-                    ctx.getPrinter().line(String.format("%3d раз(а) — %s", group.getValue().size(), key));
+                    String[] lines = masked.split("\n", -1);
+                    ctx.getPrinter().line(String.format("%3d раз(а) — %s", group.getValue().size(), lines[0]));
+                    for (int i = 1; i < lines.length; i++) {
+                        ctx.getPrinter().line(CONTINUATION_INDENT + lines[i]);
+                    }
                 }
             }
 

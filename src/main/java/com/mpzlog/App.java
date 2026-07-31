@@ -1,14 +1,8 @@
 package com.mpzlog;
 
-import com.mpzlog.mode.ModeContext;
-import com.mpzlog.mode.ModeFactory;
-import com.mpzlog.mode.ModeHandler;
-import com.mpzlog.parser.MpzLogParser;
-import com.mpzlog.parser.ProcessAnalyzer;
 import com.mpzlog.ui.TerminalPrinter;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -32,30 +26,13 @@ public class App {
     private static void processFile(String fileArg, CliParser cli) {
         Path path = Paths.get(fileArg);
 
-        if (!Files.exists(path)) {
-            System.err.println("Файл не найден: " + path.toAbsolutePath());
-            return;
-        }
-
-        if (!Files.isReadable(path)) {
-            System.err.println("Нет доступа для чтения: " + path.toAbsolutePath());
-            return;
-        }
-
-        long fileSize;
-        try {
-            fileSize = Files.size(path);
-        } catch (IOException e) {
-            System.err.println("Ошибка чтения файла: " + e.getMessage());
-            return;
+        ModeOptions modeOpts = cli.getMode();
+        if (modeOpts.isDefault()) {
+            modeOpts.setAnalyze(true);
         }
 
         TerminalPrinter printer = new TerminalPrinter();
 
-        ModeOptions modeOpts = cli.getMode();
-        if (!modeOpts.isAnalyze() && !modeOpts.isListProcesses() && modeOpts.getProcessId() == null && modeOpts.getGrepText() == null) {
-            modeOpts.setAnalyze(true);
-        }
         Path outputFile = null;
         if (modeOpts.isOutputFile()) {
             if (modeOpts.isListProcesses()) {
@@ -76,23 +53,7 @@ public class App {
             }
         }
 
-        System.out.println();
-        System.out.println("Файл: " + path.toAbsolutePath() + " (" + formatSize(fileSize) + ")");
-
-        MpzLogParser parser = new MpzLogParser();
-        try {
-            parser.parse(path);
-        } catch (IOException e) {
-            System.err.println("Ошибка при парсинге: " + e.getMessage());
-            printer.close();
-            return;
-        }
-
-        ProcessAnalyzer pa = new ProcessAnalyzer(parser.getEntries());
-
-        ModeHandler mode = ModeFactory.create(modeOpts);
-        mode.execute(new ModeContext(pa, parser.getEntries(), printer,
-                outputFile, parser, modeOpts));
+        LogProcessor.process(path, modeOpts, printer, outputFile);
     }
 
     private static Path buildOutputPath(Path sourcePath, String suffix) {
@@ -119,11 +80,5 @@ public class App {
             }
         }
         return sb.toString();
-    }
-
-    private static String formatSize(long bytes) {
-        if (bytes < 1024) return bytes + " B";
-        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
-        return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
     }
 }

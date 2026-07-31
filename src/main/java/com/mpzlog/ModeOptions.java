@@ -7,6 +7,10 @@ public class ModeOptions {
     private String processId = null;
     private String grepText = null;
 
+    public boolean isDefault() {
+        return !analyze && !listProcesses && processId == null && grepText == null;
+    }
+
     public boolean isAnalyze() { return analyze; }
     public void setAnalyze(boolean analyze) { this.analyze = analyze; }
 
