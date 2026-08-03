@@ -1,30 +1,46 @@
 package com.mpzlog.gui;
 
-import com.mpzlog.LogProcessor;
-import com.mpzlog.ModeOptions;
-import com.mpzlog.ui.TerminalPrinter;
+import com.mpzlog.model.ErrorElement;
+import com.mpzlog.model.LogEntry;
+import com.mpzlog.model.LogLine;
+import com.mpzlog.model.LogModel;
+import com.mpzlog.model.LogModelBuilder;
+import com.mpzlog.model.ProcessElement;
+import com.mpzlog.parser.MpzLogParser;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.ObservableList;
+import javafx.css.PseudoClass;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -36,42 +52,56 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.ClosePath;
-import javafx.scene.shape.Line;
-import javafx.scene.shape.LineTo;
-import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
-import javafx.scene.transform.Rotate;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class GuiApp extends Application {
 
     private static final DateTimeFormatter FILE_TIME_FMT =
             DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+    private static final double LEFT_PANEL_RATIO = 0.15;
+    private static final double BOTTOM_PANEL_RATIO = 0.25;
     private static final Color ICON_COLOR = Color.web("#3C3C3C");
+    private static final PseudoClass ACTIVE_PROCESS = PseudoClass.getPseudoClass("active-process");
 
-    private TextArea outputArea;
+    private ListView<String> rawContentList;
+    private TextArea errorsArea;
+    private TableView<ProcessElement> processListView;
+    private ComboBox<String> filterCombo;
+    private ComboBox<String> displayModeCombo;
     private Label statusBar;
     private GuiSettings settings;
     private long openSeq;
     private Path currentPath;
-    private TextField searchField;
+    private List<ProcessElement> allProcesses;
+    private List<ProcessElement> errorProcesses;
+    private List<String> allRawLines = new ArrayList<>();
+    private List<LogEntry> allEntries = new ArrayList<>();
+    private ProcessElement activeProcess;
 
     public static void main(String[] args) {
         launch(args);
@@ -80,96 +110,211 @@ public class GuiApp extends Application {
     @Override
     public void start(Stage stage) {
         settings = new GuiSettings();
-        outputArea = new TextArea();
-        outputArea.setEditable(false);
-        outputArea.setWrapText(false);
-        outputArea.setFont(Font.font("Consolas", 14));
 
-        Button openButton = new Button("Открыть файл", folderIcon());
-        openButton.setTooltip(new Tooltip("Открыть лог-файл МПЗ (Ctrl+O)"));
-        openButton.setOnAction(e -> openFile(stage));
+        rawContentList = new ListView<>();
+        rawContentList.setEditable(false);
+        rawContentList.getStyleClass().add("raw-content-list");
+        rawContentList.setCellFactory(lv -> new ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item);
+                }
+            }
+        });
+        rawContentList.setPlaceholder(new Label("Содержимое файла будет отображено здесь после открытия"));
 
-        Button processButton = new Button("Процесс", processIcon());
-        processButton.setTooltip(new Tooltip("Показать записи процесса МПЗ по process-instance (Ctrl+P)"));
-        processButton.setOnAction(e -> showProcessDialog(stage));
+        ContextMenu rawContentMenu = new ContextMenu();
+        MenuItem copyItem = new MenuItem("Копировать");
+        copyItem.setOnAction(e -> copyRawContentSelection());
+        rawContentMenu.getItems().add(copyItem);
+        rawContentList.setContextMenu(rawContentMenu);
 
-        Button listButton = new Button("Список процессов", listIcon());
-        listButton.setTooltip(new Tooltip("Список процессов МПЗ текущего файла (Ctrl+L)"));
-        listButton.setOnAction(e -> showListProcesses());
+        errorsArea = new TextArea();
+        errorsArea.setEditable(false);
+        errorsArea.setWrapText(true);
+        errorsArea.setPromptText("Сведения об ошибках будут отображены здесь");
 
-        Button grepButton = new Button("Grep", grepIcon());
-        grepButton.setTooltip(new Tooltip("Найти процессы МПЗ, содержащие строку (Ctrl+G)"));
-        grepButton.setOnAction(e -> showGrepDialog(stage));
+        processListView = new TableView<>();
+        processListView.getStyleClass().add("process-table");
+        processListView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        processListView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
 
-        Button exitButton = new Button("Выйти", exitIcon());
-        exitButton.setTooltip(new Tooltip("Закрыть программу (Ctrl+Q)"));
-        exitButton.setOnAction(e -> Platform.exit());
+        TableColumn<ProcessElement, ProcessElement> iconCol = new TableColumn<>("");
+        iconCol.setMaxWidth(26);
+        iconCol.setMinWidth(26);
+        iconCol.setSortable(false);
+        iconCol.setCellValueFactory(cd -> new javafx.beans.property.SimpleObjectProperty<>(cd.getValue()));
+        iconCol.setCellFactory(col -> new TableCell<ProcessElement, ProcessElement>() {
+            @Override
+            protected void updateItem(ProcessElement p, boolean empty) {
+                super.updateItem(p, empty);
+                if (empty || p == null) {
+                    setGraphic(null);
+                } else {
+                    setGraphic(statusIcon(p));
+                }
+            }
+        });
 
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-        spacer.setMaxWidth(Double.MAX_VALUE);
+        TableColumn<ProcessElement, ProcessElement> pidCol = new TableColumn<>("PID");
+        double pidWidth = measureTextWidth("88888888",
+                Font.font("Consolas", FontPosture.REGULAR, 11)) + 18;
+        pidCol.setPrefWidth(pidWidth);
+        pidCol.setMinWidth(pidWidth);
+        pidCol.setMaxWidth(pidWidth);
+        pidCol.setCellValueFactory(cd -> new javafx.beans.property.SimpleObjectProperty<>(cd.getValue()));
+        pidCol.setCellFactory(col -> new TableCell<ProcessElement, ProcessElement>() {
+            @Override
+            protected void updateItem(ProcessElement p, boolean empty) {
+                super.updateItem(p, empty);
+                if (empty || p == null) {
+                    setText(null);
+                    setTooltip(null);
+                } else {
+                    setFont(Font.font("Consolas", FontPosture.REGULAR, 11));
+                    setText(p.pidLabel());
+                    setTooltip(new Tooltip(p.getStatus().getLabel()));
+                }
+            }
+        });
 
-        ToolBar toolBar = new ToolBar(openButton, processButton, listButton, grepButton, spacer, exitButton);
-        toolBar.setStyle("-fx-padding: 8 10 8 10;");
-        HBox.setHgrow(openButton, Priority.NEVER);
-        HBox.setHgrow(processButton, Priority.NEVER);
-        HBox.setHgrow(listButton, Priority.NEVER);
-        HBox.setHgrow(grepButton, Priority.NEVER);
-        HBox.setHgrow(exitButton, Priority.NEVER);
+        TableColumn<ProcessElement, ProcessElement> nameCol = new TableColumn<>("Имя процесса");
+        nameCol.setCellValueFactory(cd -> new javafx.beans.property.SimpleObjectProperty<>(cd.getValue()));
+        nameCol.setCellFactory(col -> new TableCell<ProcessElement, ProcessElement>() {
+            @Override
+            protected void updateItem(ProcessElement p, boolean empty) {
+                super.updateItem(p, empty);
+                if (empty || p == null) {
+                    setText(null);
+                } else {
+                    setFont(Font.font(11));
+                    String pname = p.getProcessName();
+                    setText(pname != null ? pname : "?");
+                }
+            }
+        });
+
+        TableColumn<ProcessElement, ProcessElement> countCol = new TableColumn<>("Запросов/ответов");
+        countCol.setPrefWidth(52);
+        countCol.setMaxWidth(52);
+        countCol.setResizable(false);
+        countCol.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue()));
+        countCol.setCellFactory(col -> new TableCell<ProcessElement, ProcessElement>() {
+            @Override
+            protected void updateItem(ProcessElement p, boolean empty) {
+                super.updateItem(p, empty);
+                setAlignment(Pos.CENTER_RIGHT);
+                setText(empty || p == null ? null : String.valueOf(reqRespCount(p)));
+            }
+        });
+
+        processListView.getColumns().add(iconCol);
+        processListView.getColumns().add(pidCol);
+        processListView.getColumns().add(nameCol);
+        processListView.getColumns().add(countCol);
+
+        processListView.setRowFactory(tv -> new TableRow<ProcessElement>() {
+            @Override
+            protected void updateItem(ProcessElement item, boolean empty) {
+                super.updateItem(item, empty);
+                boolean active = !empty && item == activeProcess;
+                pseudoClassStateChanged(ACTIVE_PROCESS, active);
+            }
+        });
+        processListView.setOnMouseClicked(e -> {
+            ProcessElement sel = processListView.getSelectionModel().getSelectedItem();
+            if (sel != null && e.getClickCount() == 1) {
+                showProcessStart(sel);
+            }
+            if (sel != null && e.getClickCount() == 2) {
+                toggleActiveProcess(sel);
+            }
+        });
+        processListView.setPlaceholder(new Label("Нет процессов для отображения"));
+
+        Label filterLabel = new Label("Фильтр:");
+        filterCombo = new ComboBox<>();
+        filterCombo.getItems().addAll(
+                "Только ошибочные",
+                "Все с PID",
+                "Все процессы"
+        );
+        filterCombo.setValue("Только ошибочные");
+        filterCombo.setTooltip(new Tooltip("Фильтр списка процессов"));
+        filterCombo.setOnAction(e -> applyFilter());
+
+        Label processesLabel = new Label("Процессы МПЗ");
+        processesLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 0 2 0;");
+
+        VBox leftPanel = new VBox(6, processesLabel, filterLabel, filterCombo, processListView);
+        leftPanel.setPadding(new Insets(8));
+        leftPanel.getStyleClass().add("left-panel");
+        VBox.setVgrow(processListView, Priority.ALWAYS);
+
+        Label errorsLabel = new Label("Частые ошибки");
+        errorsLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 0 2 0;");
+
+        VBox bottomPanel = new VBox(4, errorsLabel, errorsArea);
+        bottomPanel.setPadding(new Insets(8));
+        bottomPanel.getStyleClass().add("bottom-panel");
+        VBox.setVgrow(errorsArea, Priority.ALWAYS);
 
         statusBar = new Label("Файл не выбран");
         statusBar.getStyleClass().add("status-bar");
         statusBar.setMaxWidth(Double.MAX_VALUE);
 
-        Label searchLabel = new Label("Поиск:");
-        searchField = new TextField();
-        searchField.setPromptText("Строка поиска");
-        searchField.setMinWidth(100);
+        Label displayLabel = new Label("Отображение:");
+        displayLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #5a5e66;");
+        displayModeCombo = new ComboBox<>();
+        displayModeCombo.getItems().addAll(
+                "Все строки",
+                "Выбранный процесс"
+        );
+        displayModeCombo.setValue("Все строки");
+        displayModeCombo.setTooltip(new Tooltip("Режим отображения в основной области"));
+        displayModeCombo.setOnAction(e -> applyDisplayMode());
 
-        Button nextButton = new Button("Далее", nextIcon());
-        Button prevButton = new Button("Предыдущий", prevIcon());
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        spacer.setMaxWidth(Double.MAX_VALUE);
 
-        nextButton.setOnAction(e -> findInOutput(searchField.getText(), true));
-        prevButton.setOnAction(e -> findInOutput(searchField.getText(), false));
-        searchField.setOnAction(e -> findInOutput(searchField.getText(), true));
-
-        HBox searchPanel = new HBox(8, searchLabel, searchField, nextButton, prevButton);
-        searchPanel.getStyleClass().add("search-panel");
+        ToolBar toolBar = new ToolBar(displayLabel, displayModeCombo, spacer);
+        toolBar.setStyle("-fx-padding: 8 10 8 10;");
+        HBox.setHgrow(displayLabel, Priority.NEVER);
+        HBox.setHgrow(displayModeCombo, Priority.NEVER);
 
         BorderPane root = new BorderPane();
         root.setTop(toolBar);
-        BorderPane.setMargin(outputArea, new Insets(10));
-        root.setCenter(outputArea);
-        BorderPane.setMargin(searchPanel, new Insets(0));
-        BorderPane.setMargin(statusBar, new Insets(0));
-        VBox bottomBox = new VBox(0, searchPanel, statusBar);
-        root.setBottom(bottomBox);
+        root.setLeft(leftPanel);
+        root.setCenter(rawContentList);
+
+        VBox bottomWithStatus = new VBox(0, bottomPanel, statusBar);
+        root.setBottom(bottomWithStatus);
 
         Scene scene = new Scene(root, 1000, 650);
         scene.getStylesheets().add(
                 GuiApp.class.getResource("/gui/app.css").toExternalForm());
-        searchField.prefWidthProperty().bind(scene.widthProperty().multiply(0.25));
         scene.getAccelerators().put(
                 new KeyCodeCombination(KeyCode.O, KeyCombination.CONTROL_DOWN),
-                openButton::fire);
-        scene.getAccelerators().put(
-                new KeyCodeCombination(KeyCode.P, KeyCombination.CONTROL_DOWN),
-                processButton::fire);
-        scene.getAccelerators().put(
-                new KeyCodeCombination(KeyCode.L, KeyCombination.CONTROL_DOWN),
-                listButton::fire);
-        scene.getAccelerators().put(
-                new KeyCodeCombination(KeyCode.G, KeyCombination.CONTROL_DOWN),
-                grepButton::fire);
-        scene.getAccelerators().put(
-                new KeyCodeCombination(KeyCode.F, KeyCombination.CONTROL_DOWN),
-                () -> {
-                    searchField.requestFocus();
-                    searchField.selectAll();
-                });
+                () -> openFile(stage));
         scene.getAccelerators().put(
                 new KeyCodeCombination(KeyCode.Q, KeyCombination.CONTROL_DOWN),
                 () -> Platform.exit());
+        scene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN),
+                () -> copyRawContentSelection());
+
+        scene.widthProperty().addListener((obs, oldV, newV) -> {
+            leftPanel.setPrefWidth(newV.doubleValue() * LEFT_PANEL_RATIO);
+        });
+        scene.heightProperty().addListener((obs, oldV, newV) -> {
+            bottomPanel.setPrefHeight(newV.doubleValue() * BOTTOM_PANEL_RATIO);
+        });
+
         stage.setTitle("MPZ Log Viewer");
         stage.getIcons().add(createAppIcon());
         stage.setScene(scene);
@@ -177,6 +322,13 @@ public class GuiApp extends Application {
         bindWindowBounds(stage);
         stage.setOnCloseRequest(e -> settings.flush());
         stage.show();
+
+        if (!openFile(stage)) {
+            Platform.exit();
+        }
+
+        leftPanel.setPrefWidth(scene.getWidth() * LEFT_PANEL_RATIO);
+        bottomPanel.setPrefHeight(scene.getHeight() * BOTTOM_PANEL_RATIO);
     }
 
     private void restoreWindowBounds(Stage stage) {
@@ -213,7 +365,7 @@ public class GuiApp extends Application {
         }
     }
 
-    private void openFile(Stage stage) {
+    private boolean openFile(Stage stage) {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Открыть лог-файл МПЗ");
         File lastDir = lastDirectory();
@@ -222,117 +374,268 @@ public class GuiApp extends Application {
         }
         File file = chooser.showOpenDialog(stage);
         if (file == null) {
-            return;
+            return false;
         }
         settings.setLastDirectory(file.getParent());
         Path path = file.toPath();
         currentPath = path;
         updateFileInfo(path);
-        ModeOptions opts = new ModeOptions();
-        if (opts.isDefault()) {
-            opts.setAnalyze(true);
-        }
-        process(path, opts);
+        final long seq = ++openSeq;
+        loadRawContent(path, seq);
+        analyzeFile(path, seq);
+        return true;
     }
 
-    private void showProcessDialog(Stage stage) {
-        if (currentPath == null) {
-            Alert alert = new Alert(Alert.AlertType.WARNING,
-                    "Сначала откройте лог-файл.", ButtonType.OK);
-            alert.setTitle("MPZ Log Viewer");
-            alert.setHeaderText("Файл не выбран");
-            alert.showAndWait();
-            return;
-        }
-        String clipboard = Clipboard.getSystemClipboard().getString();
-        TextInputDialog dialog = new TextInputDialog(clipboard);
-        dialog.setTitle("Процесс МПЗ");
-        dialog.setHeaderText("Введите process-instance");
-        dialog.setContentText("process-instance:");
-        TextField field = dialog.getEditor();
-        if (clipboard != null && !clipboard.isEmpty()) {
-            field.selectAll();
-        }
-        Optional<String> result = dialog.showAndWait();
-        if (!result.isPresent()) {
-            return;
-        }
-        String pid = result.get().trim();
-        if (pid.isEmpty()) {
-            return;
-        }
-        ModeOptions opts = new ModeOptions();
-        opts.setProcessId(pid);
-        process(currentPath, opts);
+    private void loadRawContent(Path path, long seq) {
+        Thread worker = new Thread(() -> {
+            try {
+                List<String> lines = new ArrayList<>();
+                try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        lines.add(line);
+                    }
+                }
+                final int totalLines = lines.size();
+                Platform.runLater(() -> {
+                    if (seq != openSeq) {
+                        return;
+                    }
+                    allRawLines = lines;
+                    rawContentList.getItems().setAll(lines);
+                    statusBar.setText(statusBar.getText()
+                            + "   |   Строк: " + totalLines);
+                });
+            } catch (IOException e) {
+                Platform.runLater(() -> {
+                    if (seq != openSeq) {
+                        return;
+                    }
+                    rawContentList.getItems().setAll("Ошибка чтения файла: " + e.getMessage());
+                });
+            }
+        }, "mpz-raw-reader");
+        worker.setDaemon(true);
+        worker.start();
     }
 
-    private void showGrepDialog(Stage stage) {
-        if (currentPath == null) {
-            Alert alert = new Alert(Alert.AlertType.WARNING,
-                    "Сначала откройте лог-файл.", ButtonType.OK);
-            alert.setTitle("MPZ Log Viewer");
-            alert.setHeaderText("Файл не выбран");
-            alert.showAndWait();
-            return;
-        }
-        String clipboard = Clipboard.getSystemClipboard().getString();
-        TextInputDialog dialog = new TextInputDialog(clipboard);
-        dialog.setTitle("Grep");
-        dialog.setHeaderText("Введите строку для поиска процессов");
-        dialog.setContentText("Строка:");
-        TextField field = dialog.getEditor();
-        if (clipboard != null && !clipboard.isEmpty()) {
-            field.selectAll();
-        }
-        Optional<String> result = dialog.showAndWait();
-        if (!result.isPresent()) {
-            return;
-        }
-        String text = result.get().trim();
-        if (text.isEmpty()) {
-            return;
-        }
-        ModeOptions opts = new ModeOptions();
-        opts.setGrepText(text);
-        process(currentPath, opts);
+    private void analyzeFile(Path path, long seq) {
+        allProcesses = null;
+        errorProcesses = null;
+        activeProcess = null;
+        allEntries = new ArrayList<>();
+        processListView.getItems().clear();
+        errorsArea.clear();
+        displayModeCombo.setValue("Все строки");
+        rawContentList.getItems().clear();
+
+        Thread worker = new Thread(() -> {
+            try {
+                MpzLogParser parser = new MpzLogParser();
+                parser.parse(path);
+                LogModel model = new LogModelBuilder().build(parser.getEntries());
+
+                List<ProcessElement> processes = model.getProcesses();
+                allEntries = model.getAllLines();
+                List<ProcessElement> errors = new ArrayList<>();
+                for (ProcessElement p : processes) {
+                    if (!p.getErrors().isEmpty()) {
+                        errors.add(p);
+                    }
+                }
+
+                final List<ProcessElement> finalAll = processes;
+                final List<ProcessElement> finalErrors = errors;
+
+                Platform.runLater(() -> {
+                    if (seq != openSeq) {
+                        return;
+                    }
+                    allProcesses = finalAll;
+                    errorProcesses = finalErrors;
+                    populateProcessList();
+                    updateErrorsPanel(processes);
+                    statusBar.setText(statusBar.getText()
+                            + "   |   Процессов: " + finalAll.size()
+                            + "   |   Ошибок: " + finalErrors.size());
+                });
+            } catch (IOException e) {
+                Platform.runLater(() -> {
+                    if (seq != openSeq) {
+                        return;
+                    }
+                    errorsArea.setText("Ошибка анализа: " + e.getMessage());
+                });
+            }
+        }, "mpz-analyze-worker");
+        worker.setDaemon(true);
+        worker.start();
     }
 
-    private void showListProcesses() {
-        if (currentPath == null) {
-            Alert alert = new Alert(Alert.AlertType.WARNING,
-                    "Сначала откройте лог-файл.", ButtonType.OK);
-            alert.setTitle("MPZ Log Viewer");
-            alert.setHeaderText("Файл не выбран");
-            alert.showAndWait();
+    private void populateProcessList() {
+        processListView.getItems().clear();
+        if (allProcesses == null || allProcesses.isEmpty()) {
             return;
         }
-        ModeOptions opts = new ModeOptions();
-        opts.setListProcesses(true);
-        process(currentPath, opts);
+        boolean hasErrors = errorProcesses != null && !errorProcesses.isEmpty();
+        String selectedFilter = filterCombo.getValue();
+        if (selectedFilter == null || (!hasErrors && "Только ошибочные".equals(selectedFilter))) {
+            selectedFilter = hasErrors ? "Только ошибочные" : "Все процессы";
+            filterCombo.setValue(selectedFilter);
+        }
+        applyFilterWithSelection(selectedFilter);
     }
 
-    private void findInOutput(String query, boolean forward) {
-        if (query == null || query.isEmpty()) {
+    private void applyFilter() {
+        if (allProcesses == null) {
             return;
         }
-        String text = outputArea.getText();
-        int idx;
-        if (forward) {
-            idx = text.indexOf(query, outputArea.getCaretPosition());
-            if (idx < 0) {
-                idx = text.indexOf(query);
+        String filter = filterCombo.getValue();
+        if (filter == null) {
+            filter = "Все процессы";
+        }
+        applyFilterWithSelection(filter);
+    }
+
+    private void applyFilterWithSelection(String filter) {
+        processListView.getItems().clear();
+        List<ProcessElement> filtered;
+        switch (filter) {
+            case "Только ошибочные":
+                filtered = errorProcesses != null ? errorProcesses : allProcesses;
+                break;
+            case "Все с PID":
+                filtered = new ArrayList<>();
+                for (ProcessElement p : allProcesses) {
+                    if (p.getPid() != null) {
+                        filtered.add(p);
+                    }
+                }
+                break;
+            case "Все процессы":
+            default:
+                filtered = allProcesses;
+                break;
+        }
+        if (filtered.isEmpty()) {
+            return;
+        }
+        processListView.getItems().setAll(filtered);
+    }
+
+    private void showProcessStart(ProcessElement p) {
+        int firstLine = p.firstLineNumber();
+        if (firstLine <= 0 || firstLine > allRawLines.size()) {
+            return;
+        }
+        String target = allRawLines.get(firstLine - 1);
+        int index = rawContentList.getItems().indexOf(target);
+        if (index < 0) {
+            return;
+        }
+        rawContentList.getSelectionModel().clearSelection();
+        rawContentList.getSelectionModel().select(index);
+        rawContentList.scrollTo(index);
+    }
+
+    private void toggleActiveProcess(ProcessElement p) {
+        if (activeProcess == p) {
+            activeProcess = null;
+            displayModeCombo.setValue("Все строки");
+        } else {
+            activeProcess = p;
+            displayModeCombo.setValue("Выбранный процесс");
+        }
+        applyDisplayMode();
+    }
+
+    private void applyDisplayMode() {
+        if ("Выбранный процесс".equals(displayModeCombo.getValue())) {
+            if (activeProcess != null) {
+                showProcessLines(activeProcess);
+            } else {
+                rawContentList.getItems().setAll(allRawLines);
             }
         } else {
-            int from = Math.max(0, outputArea.getAnchor() - 1);
-            idx = text.lastIndexOf(query, from);
-            if (idx < 0) {
-                idx = text.lastIndexOf(query);
+            activeProcess = null;
+            rawContentList.getItems().setAll(allRawLines);
+        }
+        processListView.refresh();
+    }
+
+    private void showProcessLines(ProcessElement p) {
+        Set<LogEntry> processEntries = new HashSet<>();
+        for (LogLine line : p.getLines()) {
+            processEntries.add(line.getEntry());
+        }
+        List<String> shown = new ArrayList<>();
+        for (int i = 0; i < allEntries.size(); i++) {
+            LogEntry e = allEntries.get(i);
+            if (!processEntries.contains(e)) {
+                continue;
+            }
+            int start = e.getLineNumber();
+            int end = i + 1 < allEntries.size()
+                    ? allEntries.get(i + 1).getLineNumber()
+                    : allRawLines.size() + 1;
+            for (int lineNo = start; lineNo < end; lineNo++) {
+                if (lineNo >= 1 && lineNo <= allRawLines.size()) {
+                    shown.add(allRawLines.get(lineNo - 1));
+                }
             }
         }
-        if (idx >= 0) {
-            outputArea.selectRange(idx, idx + query.length());
-            outputArea.requestFocus();
+        if (shown.isEmpty()) {
+            shown.add(p.pidLabel() + " — строки процесса не найдены");
         }
+        rawContentList.getItems().setAll(shown);
+    }
+
+    private static int reqRespCount(ProcessElement p) {
+        int count = 0;
+        for (LogLine line : p.getLines()) {
+            if (line.isRequest() || line.isResponse()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private void updateErrorsPanel(List<ProcessElement> processes) {
+        errorsArea.clear();
+        Map<String, List<ErrorElement>> errorGroups = new LinkedHashMap<>();
+        for (ProcessElement p : processes) {
+            for (ErrorElement err : p.getErrors()) {
+                errorGroups.computeIfAbsent(err.getErrorKey(), k -> new ArrayList<>()).add(err);
+            }
+        }
+        if (errorGroups.isEmpty()) {
+            errorsArea.setText("Ошибки не найдены");
+            return;
+        }
+        List<Map.Entry<String, List<ErrorElement>>> topErrors = errorGroups.entrySet().stream()
+                .sorted((a, b) -> Integer.compare(b.getValue().size(), a.getValue().size()))
+                .limit(10)
+                .collect(Collectors.toList());
+        if (topErrors.isEmpty()) {
+            errorsArea.setText("Ошибки не найдены");
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, List<ErrorElement>> group : topErrors) {
+            String masked = group.getKey();
+            if (masked.isEmpty()) {
+                masked = group.getValue().get(0).getErrorKey();
+            }
+            String[] lines = masked.split("\n", -1);
+            sb.append(String.format("%3d раз(а) — %s", group.getValue().size(), lines[0]));
+            sb.append("\n");
+            for (int i = 1; i < lines.length; i++) {
+                sb.append("             ").append(lines[i]);
+                sb.append("\n");
+            }
+            sb.append("\n");
+        }
+        errorsArea.setText(sb.toString().trim());
     }
 
     private void updateFileInfo(Path path) {
@@ -349,6 +652,12 @@ public class GuiApp extends Application {
         statusBar.setText(sb.toString());
     }
 
+    private static double measureTextWidth(String text, Font font) {
+        Text t = new Text(text);
+        t.setFont(font);
+        return t.getLayoutBounds().getWidth();
+    }
+
     private static Region iconIn(Node shape) {
         StackPane pane = new StackPane(shape);
         pane.setPrefSize(16, 16);
@@ -356,106 +665,28 @@ public class GuiApp extends Application {
         return pane;
     }
 
-    private static Node folderIcon() {
-        javafx.scene.shape.Path p = new javafx.scene.shape.Path();
-        p.setFill(Color.web("#D9A441"));
-        p.setStroke(ICON_COLOR);
-        p.setStrokeWidth(1.2);
-        p.getElements().addAll(
-                new MoveTo(1, 3.5),
-                new LineTo(6.5, 3.5),
-                new LineTo(7.8, 5),
-                new LineTo(15, 5),
-                new LineTo(15, 12.5),
-                new LineTo(1, 12.5),
-                new ClosePath());
-        return iconIn(p);
-    }
-
-    private static Node processIcon() {
-        Group g = new Group();
-        Circle outer = new Circle(8, 8, 5);
-        outer.setFill(null);
-        outer.setStroke(ICON_COLOR);
-        outer.setStrokeWidth(1.4);
-        Circle inner = new Circle(8, 8, 2);
-        inner.setFill(ICON_COLOR);
-        Line stem = new Line(12, 12, 14.5, 14.5);
-        stem.setStroke(ICON_COLOR);
-        stem.setStrokeWidth(1.4);
-        g.getChildren().addAll(outer, inner, stem);
-        return iconIn(g);
-    }
-
-    private static Node listIcon() {
-        Group g = new Group();
-        for (int i = 0; i < 3; i++) {
-            double y = 4 + i * 4.5;
-            Circle bullet = new Circle(3.2, y, 1.6);
-            bullet.setFill(ICON_COLOR);
-            Line line = new Line(6.2, y, 14, y);
-            line.setStroke(ICON_COLOR);
-            line.setStrokeWidth(1.4);
-            g.getChildren().addAll(bullet, line);
+    private static Node statusIcon(ProcessElement p) {
+        Color color;
+        switch (p.getStatus()) {
+            case COMPLETED:
+                color = Color.web("#3A8F3A");
+                break;
+            case COMPLETED_WITH_ERROR:
+                color = Color.web("#E0A92F");
+                break;
+            case INTERRUPTED:
+                color = Color.web("#C06028");
+                break;
+            case FAILED:
+                color = Color.BLACK;
+                break;
+            case UNRESOLVED:
+            default:
+                color = Color.web("#8A8A8A");
+                break;
         }
-        return iconIn(g);
-    }
-
-    private static Node grepIcon() {
-        Group g = new Group();
-        Circle lens = new Circle(6.5, 6.5, 4.3);
-        lens.setFill(null);
-        lens.setStroke(ICON_COLOR);
-        lens.setStrokeWidth(1.4);
-        Line handle = new Line(9.8, 9.8, 14, 14);
-        handle.setStroke(ICON_COLOR);
-        handle.setStrokeWidth(1.6);
-        g.getChildren().addAll(lens, handle);
-        return iconIn(g);
-    }
-
-    private static Node exitIcon() {
-        Group g = new Group();
-        Line l1 = new Line(3.5, 3.5, 12.5, 12.5);
-        Line l2 = new Line(12.5, 3.5, 3.5, 12.5);
-        l1.setStroke(ICON_COLOR);
-        l1.setStrokeWidth(1.6);
-        l2.setStroke(ICON_COLOR);
-        l2.setStrokeWidth(1.6);
-        g.getChildren().addAll(l1, l2);
-        return iconIn(g);
-    }
-
-    private static Node nextIcon() {
-        Group g = new Group();
-        Line l = new Line(8, 3, 8, 13);
-        l.setStroke(ICON_COLOR);
-        l.setStrokeWidth(1.3);
-        javafx.scene.shape.Path arrow = new javafx.scene.shape.Path();
-        arrow.setFill(ICON_COLOR);
-        arrow.getElements().addAll(
-                new MoveTo(3.5, 8),
-                new LineTo(8, 12.5),
-                new LineTo(12.5, 8),
-                new ClosePath());
-        g.getChildren().addAll(l, arrow);
-        return iconIn(g);
-    }
-
-    private static Node prevIcon() {
-        Group g = new Group();
-        Line l = new Line(8, 13, 8, 3);
-        l.setStroke(ICON_COLOR);
-        l.setStrokeWidth(1.3);
-        javafx.scene.shape.Path arrow = new javafx.scene.shape.Path();
-        arrow.setFill(ICON_COLOR);
-        arrow.getElements().addAll(
-                new MoveTo(3.5, 8),
-                new LineTo(8, 3.5),
-                new LineTo(12.5, 8),
-                new ClosePath());
-        g.getChildren().addAll(l, arrow);
-        return iconIn(g);
+        Circle c = new Circle(5.0, color);
+        return iconIn(c);
     }
 
     private static Image createAppIcon() {
@@ -486,52 +717,20 @@ public class GuiApp extends Application {
         return f.isDirectory() ? f : null;
     }
 
-    private void process(Path path, ModeOptions opts) {
-        final long seq = ++openSeq;
-        outputArea.clear();
-        outputArea.selectRange(0, 0);
-
-        Writer sink = new Writer() {
-            @Override
-            public void write(char[] cbuf, int off, int len) {
-                String text = new String(cbuf, off, len);
-                if (text.isEmpty()) {
-                    return;
-                }
-                Platform.runLater(() -> {
-                    if (seq != openSeq) {
-                        return;
-                    }
-                    outputArea.appendText(text);
-                });
+    private void copyRawContentSelection() {
+        ObservableList<String> selected = rawContentList.getSelectionModel().getSelectedItems();
+        if (selected.isEmpty()) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < selected.size(); i++) {
+            if (i > 0) {
+                sb.append('\n');
             }
-
-            @Override
-            public void flush() {
-            }
-
-            @Override
-            public void close() {
-            }
-        };
-        TerminalPrinter printer = new TerminalPrinter(new PrintWriter(sink));
-
-        Thread worker = new Thread(() -> {
-            if (opts.isDefault()) {
-                opts.setAnalyze(true);
-            }
-            long parseTimeMs = LogProcessor.process(path, opts, printer, null);
-            Platform.runLater(() -> {
-                if (seq != openSeq) {
-                    return;
-                }
-                outputArea.selectRange(0, 0);
-                outputArea.positionCaret(0);
-                statusBar.setText(statusBar.getText()
-                        + "   |   Время парсинга: " + parseTimeMs + " мс");
-            });
-        }, "mpz-log-worker");
-        worker.setDaemon(true);
-        worker.start();
+            sb.append(selected.get(i));
+        }
+        ClipboardContent content = new ClipboardContent();
+        content.putString(sb.toString());
+        Clipboard.getSystemClipboard().setContent(content);
     }
 }

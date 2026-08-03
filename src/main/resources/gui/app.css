@@ -70,23 +70,119 @@
     -fx-background-color: #ffffff;
 }
 
-/* ---- Search panel ---- */
-
-.search-panel {
-    -fx-background-color: #f5f6f8;
-    -fx-padding: 6 10 6 10;
-}
-
-.search-panel .label {
-    -fx-text-fill: #5a5e66;
-}
-
 /* ---- Status bar ---- */
 
 .status-bar {
     -fx-padding: 2 10 8 10;
     -fx-text-fill: #6a6e76;
     -fx-font-size: 12px;
+}
+
+/* ---- Left panel ---- */
+
+.left-panel {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent #e1e4e8 transparent transparent;
+    -fx-border-width: 0 0 0 1;
+    -fx-padding: 0;
+}
+
+.left-panel .label {
+    -fx-text-fill: #5a5e66;
+}
+
+.left-panel .combo-box {
+    -fx-font-size: 12px;
+}
+
+.left-panel .list-view {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.left-panel .list-cell {
+    -fx-padding: 3 6 3 6;
+    -fx-font-size: 12px;
+    -fx-text-fill: #1c1e21;
+}
+
+.left-panel .list-cell:hover {
+    -fx-background-color: #f0f2f5;
+}
+
+.left-panel .list-cell:selected {
+    -fx-background-color: #d6e4ff;
+}
+
+/* ---- Process table ---- */
+
+.process-table {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.process-table .scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-padding: 0;
+}
+
+.process-table .table-column {
+    -fx-font-size: 12px;
+    -fx-padding: 2 4 2 4;
+}
+
+.process-table .table-row-cell {
+    -fx-padding: 0;
+}
+
+.process-table .table-row-cell:active-process {
+    -fx-background-color: #cfe2ff;
+    -fx-font-weight: bold;
+}
+
+.process-table .table-row-cell:active-process .table-cell {
+    -fx-background-color: #cfe2ff;
+}
+
+/* ---- Bottom panel ---- */
+
+.bottom-panel {
+    -fx-background-color: #fafafa;
+    -fx-border-color: #e1e4e8 transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 0;
+}
+
+.bottom-panel .text-area {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 12px;
+}
+
+.bottom-panel .text-area:focused {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 12px;
+    -fx-border-color: #3a7dff;
+    -fx-background-color: #ffffff;
+}
+
+/* ---- Raw content list ---- */
+
+.raw-content-list {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent;
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 14px;
+}
+
+.raw-content-list .list-cell {
+    -fx-padding: 2 4 2 4;
+    -fx-text-fill: #1c1e21;
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 14px;
+}
+
+.raw-content-list .list-cell:hover {
+    -fx-background-color: #f0f2f5;
 }
 
 /* ---- Dialogs ---- */

@@ -1,5 +1,7 @@
 package com.mpzlog.parser;
 
+import com.mpzlog.model.LogEntry;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;

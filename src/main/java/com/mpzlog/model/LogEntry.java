@@ -1,4 +1,4 @@
-package com.mpzlog.parser;
+package com.mpzlog.model;
 
 import java.time.LocalTime;
 
