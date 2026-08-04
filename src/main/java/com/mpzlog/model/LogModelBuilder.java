@@ -1,13 +1,17 @@
 package com.mpzlog.model;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Строит {@link LogModel} единым проходом по записям лога.
@@ -68,6 +72,7 @@ public final class LogModelBuilder {
             }
         }
         finalizeStatuses();
+        buildFrequentErrors();
         return model;
     }
 
@@ -138,8 +143,13 @@ public final class LogModelBuilder {
                 return pending;
             }
         }
-        // ответ непривязанный (pi=0 / null)
-        return unboundProcess(task, e, false, true);
+        // ответ непривязанный (pi=0 / null) — создаём новый Процесс, не переиспользуем
+        ProcessElement unbound = new ProcessElement();
+        unbound.setTask(task);
+        unbound.setStatus(ProcessElement.Status.UNRESOLVED);
+        unbound.getLines().add(new LogLine(e, false, true));
+        model.addProcess(unbound);
+        return unbound;
     }
 
     ProcessElement handleOrdinary(LogEntry e, String task) {
@@ -263,6 +273,32 @@ public final class LogModelBuilder {
                 p.setStatus(ProcessElement.Status.UNRESOLVED);
             }
         }
+    }
+
+    private void buildFrequentErrors() {
+        Map<String, List<ErrorElement>> errorGroups = new LinkedHashMap<>();
+        Map<String, Set<ProcessElement>> errorProcessMap = new LinkedHashMap<>();
+        for (ProcessElement p : model.getProcesses()) {
+            for (ErrorElement err : p.getErrors()) {
+                errorGroups.computeIfAbsent(err.getErrorKey(), k -> new ArrayList<>()).add(err);
+                errorProcessMap.computeIfAbsent(err.getErrorKey(), k -> new HashSet<>()).add(p);
+            }
+        }
+        if (errorGroups.isEmpty()) {
+            return;
+        }
+        List<ErrorGroupInfo> result = errorGroups.entrySet().stream()
+                .sorted((a, b) -> Integer.compare(b.getValue().size(), a.getValue().size()))
+                .limit(10)
+                .map(group -> {
+                    String key = group.getKey().isEmpty()
+                            ? group.getValue().get(0).getErrorKey()
+                            : group.getKey();
+                    return new ErrorGroupInfo(group.getValue().size(), key,
+                            errorProcessMap.get(group.getKey()));
+                })
+                .collect(Collectors.toList());
+        model.setFrequentErrors(result);
     }
 
     // ---- извлечение данных ----

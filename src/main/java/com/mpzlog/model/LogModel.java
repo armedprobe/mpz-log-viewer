@@ -16,6 +16,7 @@ public final class LogModel {
 
     private final List<ProcessElement> processes = new ArrayList<>();
     private final List<LogEntry> allLines = new ArrayList<>();
+    private final List<ErrorGroupInfo> frequentErrors = new ArrayList<>();
     private final Map<String, ProcessElement> byPid = new LinkedHashMap<>();
 
     /** Список элементов Процесс. */
@@ -26,6 +27,11 @@ public final class LogModel {
     /** Список Все Строки лога. */
     public List<LogEntry> getAllLines() {
         return allLines;
+    }
+
+    /** Список частых ошибок (топ-10 по маскированному ключу), либо пустой список. */
+    public List<ErrorGroupInfo> getFrequentErrors() {
+        return frequentErrors;
     }
 
     /** Процесс по PID, либо {@code null}. */
@@ -83,5 +89,10 @@ public final class LogModel {
 
     void addLine(LogEntry e) {
         allLines.add(e);
+    }
+
+    void setFrequentErrors(List<ErrorGroupInfo> errors) {
+        frequentErrors.clear();
+        frequentErrors.addAll(errors);
     }
 }

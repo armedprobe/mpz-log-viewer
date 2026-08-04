@@ -344,4 +344,64 @@ public class LogModelBuilderTest {
         assertFalse(key.contains("4*************_**P"));
         assertFalse(key.contains("18") && !key.contains("12899"));
     }
+
+    @Test
+    public void frequentErrorsEmptyWhenNoErrors() {
+        List<LogEntry> entries = new ArrayList<>();
+        entries.add(entry(1, "task-1", request("PRC_OK", "0")));
+        entries.add(entry(2, "task-1", response("PRC_OK", "100", "END_OF_PROCESS")));
+
+        LogModel model = builder.build(entries);
+
+        assertTrue(model.getFrequentErrors().isEmpty());
+    }
+
+    @Test
+    public void frequentErrorsGroupsByMaskedKey() {
+        List<LogEntry> entries = new ArrayList<>();
+        String err1 = "by.softclub.mpz.MpzException: value 123 is too long\n"
+                + "at by.softclub.mpz.Validator.check(Validator.java:10)\n"
+                + "at com.example.Caller.call(Caller.java:5)";
+        String err2 = "by.softclub.mpz.MpzException: value 456 is too long\n"
+                + "at by.softclub.mpz.Validator.check(Validator.java:10)\n"
+                + "at com.example.Caller.call(Caller.java:5)";
+        String err3 = "java.lang.NullPointerException\n"
+                + "at by.softclub.mpz.SomeClass.run(SomeClass.java:20)";
+
+        entries.add(entry(1, "task-1", err1));
+        entries.add(entry(2, "task-2", err2));
+        entries.add(entry(3, "task-3", err3));
+
+        LogModel model = builder.build(entries);
+
+        List<ErrorGroupInfo> errors = model.getFrequentErrors();
+        assertEquals(2, errors.size());
+
+        ErrorGroupInfo top = errors.get(0);
+        assertEquals(2, top.getCount());
+        assertTrue(top.getErrorKey().contains("MpzException"));
+        assertTrue(top.getErrorKey().contains("#")); // 123 и 456 замаскированы в #
+
+        ErrorGroupInfo second = errors.get(1);
+        assertEquals(1, second.getCount());
+        assertTrue(second.getErrorKey().contains("NullPointerException"));
+    }
+
+    @Test
+    public void frequentErrorsTracksProcesses() {
+        List<LogEntry> entries = new ArrayList<>();
+        String err = "by.softclub.mpz.MpzException: something wrong\n"
+                + "at by.softclub.mpz.SomeClass.run(SomeClass.java:20)\n"
+                + "at com.example.Caller.call(Caller.java:5)";
+
+        entries.add(entry(1, "task-1", err));
+        entries.add(entry(2, "task-2", err));
+
+        LogModel model = builder.build(entries);
+
+        assertEquals(1, model.getFrequentErrors().size());
+        ErrorGroupInfo group = model.getFrequentErrors().get(0);
+        assertEquals(2, group.getCount());
+        assertEquals(2, group.getProcesses().size());
+    }
 }
