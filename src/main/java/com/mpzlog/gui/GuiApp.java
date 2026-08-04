@@ -11,7 +11,6 @@ import com.mpzlog.parser.MpzLogParser;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableList;
 import javafx.css.PseudoClass;
 import javafx.geometry.Insets;
@@ -19,10 +18,8 @@ import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -52,7 +49,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
@@ -83,7 +79,7 @@ public class GuiApp extends Application {
 
     private static final DateTimeFormatter FILE_TIME_FMT =
             DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
-    private static final double LEFT_PANEL_RATIO = 0.15;
+    private static final double LEFT_PANEL_RATIO = 0.20;
     private static final double BOTTOM_PANEL_RATIO = 0.25;
     private static final Color ICON_COLOR = Color.web("#3C3C3C");
     private static final PseudoClass ACTIVE_PROCESS = PseudoClass.getPseudoClass("active-process");

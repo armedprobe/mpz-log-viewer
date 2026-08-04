@@ -189,6 +189,67 @@ public class LogModelBuilderTest {
     }
 
     @Test
+    public void lateResponseAttachesToTruncatedStart() {
+        // A — первый запрос на трэде, B — второй запрос срезает «окно» A
+        List<LogEntry> entries = new ArrayList<>();
+        entries.add(entry(1, "task-1", request("PRC_A", "0")));
+        entries.add(entry(2, "task-1", request("PRC_B", "0")));
+        entries.add(entry(3, "task-1", response("PRC_B", "200", "END_OF_PROCESS")));
+        // поздний ответ A с неизвестным PID должен попасть в A, а не в непривязанные
+        entries.add(entry(4, "task-1", response("PRC_A", "100", "END_OF_PROCESS")));
+
+        LogModel model = builder.build(entries);
+
+        assertEquals(2, model.getProcesses().size());
+        ProcessElement a = null;
+        ProcessElement b = null;
+        for (ProcessElement p : model.getProcesses()) {
+            if ("PRC_A".equals(p.getProcessName())) {
+                a = p;
+            }
+            if ("PRC_B".equals(p.getProcessName())) {
+                b = p;
+            }
+        }
+        assertNotNull(a);
+        assertNotNull(b);
+        assertEquals("100", a.getPid());
+        assertEquals(ProcessElement.Status.COMPLETED, a.getStatus());
+        assertEquals(2, a.getLines().size());
+        assertEquals("200", b.getPid());
+        assertEquals(ProcessElement.Status.COMPLETED, b.getStatus());
+        assertEquals(2, b.getLines().size());
+    }
+
+    @Test
+    public void tailCutAtNewRequest() {
+        List<LogEntry> entries = new ArrayList<>();
+        entries.add(entry(1, "task-1", request("PRC_A", "0")));
+        entries.add(entry(2, "task-1", "хвост A"));
+        entries.add(entry(3, "task-1", request("PRC_B", "0")));
+        entries.add(entry(4, "task-1", "хвост B"));
+        entries.add(entry(5, "task-1", response("PRC_B", "200", "END_OF_PROCESS")));
+
+        LogModel model = builder.build(entries);
+
+        assertEquals(2, model.getProcesses().size());
+        ProcessElement a = null;
+        ProcessElement b = null;
+        for (ProcessElement p : model.getProcesses()) {
+            if ("PRC_A".equals(p.getProcessName())) {
+                a = p;
+            }
+            if ("PRC_B".equals(p.getProcessName())) {
+                b = p;
+            }
+        }
+        assertNotNull(a);
+        assertNotNull(b);
+        assertEquals(2, a.getLines().size());
+        assertEquals(3, b.getLines().size());
+    }
+
+    @Test
     public void unboundResponseCreatesProcess() {
         List<LogEntry> entries = new ArrayList<>();
         entries.add(entry(1, "task-1", response("PRC_UNKNOWN", "0", "ERROR")));

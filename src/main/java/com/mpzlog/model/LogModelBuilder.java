@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
  *   <li>{@code handle-request pi=0} — старт нового процесса (status {@code UNRESOLVED});</li>
  *   <li>{@code handle-request pi=PID} — повторный вызов: в известный процесс, иначе новый процесс с этим PID;</li>
  *   <li>прочая запись — в процесс с равным трэдом;</li>
+ *   <li>новый запрос на трэде срезает «хвостовые» записи предыдущего запроса (окно трэда открывается заново);</li>
  *   <li>{@code handle-response}: PID известен → в него; PID неизвестен → в процесс с равным трэдом с
  *       неопределённым PID (ответ на первый запрос); иначе непривязанный (пер-трэдовый процесс);</li>
  *   <li>запись-ошибка добавляется в процесс и его Ошибки, считается ключ ошибки;</li>
@@ -75,6 +76,7 @@ public final class LogModelBuilder {
     ProcessElement handleRequest(LogEntry e, String task, String pi) {
         Deque<ProcessElement> stack = stackByTask.computeIfAbsent(task, k -> new ArrayDeque<>());
         if ("0".equals(pi)) {
+            stack.clear();
             ProcessElement p = new ProcessElement();
             p.setTask(task);
             p.setProcessName(extractName(e.getMessage()));
@@ -85,8 +87,10 @@ public final class LogModelBuilder {
             return p;
         }
         if (pi != null) {
+            stack.clear();
             ProcessElement known = byPid.get(pi);
             if (known != null) {
+                removeFromStacks(known);
                 known.setTask(task);
                 known.getLines().add(new LogLine(e, true, false));
                 stack.push(known);
@@ -113,18 +117,18 @@ public final class LogModelBuilder {
         if (piReal) {
             ProcessElement known = byPid.get(pi);
             if (known != null) {
-                ProcessElement pending = findPendingStart(stack, e.getMessage());
+                ProcessElement pending = findPendingStart(task, e.getMessage());
                 if (pending != null && pending != known) {
                     // стартовый request получил ответ с уже известным PID — слияние
                     mergeInto(known, pending);
                     model.removeProcess(pending);
-                    stack.remove(pending);
+                    removeFromStacks(pending);
                 }
                 known.getLines().add(new LogLine(e, false, true));
                 closeOwnerWindow(stack, known);
                 return known;
             }
-            ProcessElement pending = findPendingStart(stack, e.getMessage());
+            ProcessElement pending = findPendingStart(task, e.getMessage());
             if (pending != null) {
                 pending.setPid(pi);
                 pending.setTask(task);
@@ -162,15 +166,18 @@ public final class LogModelBuilder {
     }
 
     /**
-     * Ищет среди открытых окон треда самый старый процесс с неопределённым PID.
-     * Сначала — по совпадению process-name, при отсутствии совпадений — самый старый.
+     * Ищет среди процессов модели ответ на первый запрос: процесс с равным трэдом
+     * и неопределённым PID, начатый запросом. Сначала — по совпадению process-name,
+     * при отсутствии совпадений — самый старый.
      */
-    private ProcessElement findPendingStart(Deque<ProcessElement> stack, String msg) {
+    private ProcessElement findPendingStart(String task, String msg) {
         String procId = extractName(msg);
         ProcessElement fallback = null;
-        for (Iterator<ProcessElement> it = stack.descendingIterator(); it.hasNext(); ) {
-            ProcessElement p = it.next();
-            if (p.getPid() != null) {
+        for (ProcessElement p : model.getProcesses()) {
+            if (p.getPid() != null || !hasRequest(p)) {
+                continue;
+            }
+            if (!task.equals(p.getTask())) {
                 continue;
             }
             if (procId != null && procId.equals(p.getProcessName())) {
@@ -181,6 +188,22 @@ public final class LogModelBuilder {
             }
         }
         return fallback;
+    }
+
+    private static boolean hasRequest(ProcessElement p) {
+        for (LogLine line : p.getLines()) {
+            if (line.isRequest()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Убирает процесс из окон всех трэдов (при переносе на новый трэд или слиянии). */
+    private void removeFromStacks(ProcessElement p) {
+        for (Deque<ProcessElement> s : stackByTask.values()) {
+            s.remove(p);
+        }
     }
 
     /** Закрывает окно владельца и все более старые открытые окна треда. */
