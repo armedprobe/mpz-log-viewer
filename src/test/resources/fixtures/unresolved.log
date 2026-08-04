@@ -1,0 +1,19 @@
+16:40:27,535 INFO  [by.softclub.mpzws.MpzWs] (default task-1) handle-request: <?xml version='1.0' encoding='UTF-8'?>
+<mpz-request>
+  <session>
+    <process-id>PRC_APB_CLAIM_CREATE</process-id>
+    <process-instance>0</process-instance>
+  </session>
+  <data>
+    <object>
+      <name>CLIENT</name>
+      <ROWSET>
+        <ROW>
+          <PERSONALNUM>405XXXXXXXXPB5_TMP</PERSONALNUM>
+        </ROW>
+      </ROWSET>
+    </object>
+  </data>
+</mpz-request>
+16:40:27,551 INFO  [by.softclub.mpzws.MpzWs] (default task-1) handle-response: <?xml version='1.0' encoding='UTF-8'?>
+<mpz-response>

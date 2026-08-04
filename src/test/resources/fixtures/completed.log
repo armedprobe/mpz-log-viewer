@@ -1,0 +1,502 @@
+00:17:46,848 INFO  [by.softclub.mpzws.MpzWs] (default task-17) handle-request: <?xml version='1.0' encoding='UTF-8'?>
+<mpz-request>
+  <session>
+    <process-id>PRC_APB_CLAIM_CREATE</process-id>
+    <process-instance>0</process-instance>
+  </session>
+  <data>
+    <object>
+      <name>CLIENT</name>
+      <ROWSET>
+        <ROW>
+          <PERSONALNUM>421XXXXXXXXPB3</PERSONALNUM>
+        </ROW>
+      </ROWSET>
+    </object>
+  </data>
+</mpz-request>
+00:17:46,848 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-17) QuerySelectSingle execute SelectRetailClientInitialData{personalNum=4************3, bankCode=APB, sourceSystem=NT}
+00:17:46,848 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-17) executeQuery SQL=SELECT * FROM VCLM_CLIENT_DATA CD WHERE CD.PERSONALNUM = ?
+00:17:46,852 INFO  [by.softclub.mpz.sql.claim.SelectRetailClientInitialData] (default task-17) Р—Р°РїРёСЃСЊ Рѕ РєР»РёРµРЅС‚Рµ РЅР°Р№РґРµРЅР° РІ NT: ClientData{sourceSystem=NT, clientId=5083212, resident=true, personal=ClientPersonalData{birthDate=1***-**-*1, personalNum=4************3, firstName=РЇ*Р°, lastName=Рљ********Р°, middleName=Рђ*******Р°, prevFirstName=, prevLastName=, prevMiddleName=, firstNameLat=Y**A, lastNameLat=K*********A, gender=0, countryId=112, countryName=null, codeWord=Рљ********Рђ}, cert=ClientCertData{certTypeId=3, certNum=B*******3, certDate=2***-**-*2, certPublic=РџР•Р Р’РћРњРђР™РЎРљРРњ Р РћР’Р” Р“ Р’РРўР•Р‘РЎРљРђ, certCountryId=112, certExpireDate=2***-**-*2}, workPlace=ClientWorkplaceData{workPlace=, position=, unp=, experience=null, date=n**l}, phoneWork=ClientPhone{regionCode=null, zoneCode=null, phoneNumber=, telecomOperator=0}, phoneMobile=ClientPhone{regionCode=null, zoneCode=null, phoneNumber=, telecomOperator=1}, phoneMobile2=ClientPhone{regionCode=null, zoneCode=null, phoneNumber=, telecomOperator=0}, phoneHome=ClientPhone{regionCode=null, zoneCode=null, phoneNumber=, telecomOperator=0}, phoneHome2=ClientPhone{regionCode=null, zoneCode=null, phoneNumber=, telecomOperator=0}, phoneOther=ClientPhone{regionCode=null, zoneCode=null, phoneNumber=, telecomOperator=0}, email=null, birthPlace=ClientAddress{structured=false, fullAddress=Р ***************************Рљ, stateId=null, postCode=null, regionId=null, regionName=, districtName=, unitaryAreaName=, settlementTypeId=null, settlementName=, streetTypeId=null, streetName=, house=null, building=null, office=null, SOATO=null, fullAttrValue=, stateName=null}, addrReg=ClientAddress{structured=false, fullAddress=Р‘*******,*******,**************,****************,***.**,***.*0, stateId=null, postCode=null, regionId=null, regionName=, districtName=, unitaryAreaName=, settlementTypeId=null, settlementName=, streetTypeId=null, streetName=, house=null, building=null, office=null, SOATO=null, fullAttrValue=, stateName=null}, addrLive=ClientAddress{structured=false, fullAddress=Р‘*******,********,**************,****************,**.**,***.*0, stateId=null, postCode=null, regionId=null, regionName=, districtName=, unitaryAreaName=, settlementTypeId=null, settlementName=, streetTypeId=null, streetName=, house=null, building=null, office=null, SOATO=null, fullAttrValue=, stateName=null}, familyStatusId=null, insiderTypeId=null, taxData=ClientTaxData{legalStatus=, unp=, NINPS=, bankCodeNINPS=}, isMsi=false, isFatca=false}.
+00:17:46,854 FINE  [by.softclub.mpz.settings.MpzSettings] (default task-17) execute SQL=begin ? := getrgitemvalueex(?,?,?); end;
+00:17:46,854 FINE  [by.softclub.mpz.settings.MpzSettings] (default task-17) execute SQL=begin ? := getrgitemvalueex(?,?,?); end;
+00:17:46,854 FINE  [by.softclub.mpz.cd.accept.AcceptanceCriterionIsResident] (default task-17) РљСЂРёС‚РµСЂРёР№ РїСЂРёРµРјР»РµРјРѕСЃС‚Рё РїСЂРѕРІРµСЂРµРЅ AcceptanceCriterionIsResident{}.
+00:17:46,854 FINE  [by.softclub.mpz.cd.accept.AcceptanceCriterionCertExpireDate] (default task-17) РљСЂРёС‚РµСЂРёР№ РїСЂРёРµРјР»РµРјРѕСЃС‚Рё РїСЂРѕРІРµСЂРµРЅ AcceptanceCriterionCertExpireDate{}.
+00:17:46,854 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.GET_CLAIM_COUNT : p_personalnum='4************3', p_days_count='30'
+00:17:46,860 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.GET_CLAIM_COUNT result : 0
+00:17:46,860 FINE  [by.softclub.mpz.cd.accept.AcceptanceCriterionMaxClaims] (default task-17) РљСЂРёС‚РµСЂРёР№ РїСЂРёРµРјР»РµРјРѕСЃС‚Рё РїСЂРѕРІРµСЂРµРЅ AcceptanceCriterionMaxClaims{maxClaimCount=5, periodDays=30, clmOnline=by.softclub.mpz.sql.PkgClmOnline@43581097}.
+00:17:46,860 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.INITIALIZE_ONLINE_LOANDATA : p_clientdatasourceid='1', p_clientid='5083212', p_personalnum='4************3'
+00:17:46,863 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.INITIALIZE_ONLINE_LOANDATA result : 3988167
+00:17:46,863 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_PERSONAL : p_iid='3988167', p_gender='0', p_birthdate='1***-**-*1', p_firstname='РЇ*Р°', p_lastname='Рљ********Р°', p_middlename='Рђ*******Р°', p_prevfirstname='', p_prevlastname='', p_prevmiddlename='', p_firstnamelat='Y**A', p_lastnamelat='K*********A', p_countryid='112', p_countryname='null', p_codeword='Рљ********Рђ'
+00:17:46,864 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_CERT : p_iid='3988167', p_certtypeid='3', p_certnum='B*******3', p_certdate='2***-**-*2', p_certpublicauth='РџР•Р Р’РћРњРђР™РЎРљРРњ Р РћР’Р” Р“ Р’РРўР•Р‘РЎРљРђ', p_certexpiredate='2***-**-*2'
+00:17:46,865 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_WORKPLACE : p_iid='3988167', p_workplace='', p_workplaceunp='', p_workplaceposition='', p_workplaceexperience='null', p_workplacedate='n**l', p_workplaceemprankid='null', p_issubjempinside='null'
+00:17:46,866 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_EMAIL : p_iid='3988167', p_email=''
+00:17:46,868 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_OTHER : p_iid='3988167', p_livetypeid='null', p_isproprealestate='null', p_ispropcar='null', p_familystatusid='null', p_childrencount='null', p_dependentcount='null', p_armyrelationtypeid='null', p_educationkindid='null', p_isadminliability='null', p_iscriminalliability='null', p_isbankinsider='null', p_insidertypeid='null', p_isfatca='false', p_familymemberscount='null'
+00:17:46,869 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_MSI : p_iid='3988167', p_ismsi='false'
+00:17:46,870 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_ADDRESS : p_iid='3988167', p_addresstypeid='2', p_address='Р‘*******,*******,**************,****************,***.**,***.*0'
+00:17:46,871 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_ADDRESS : p_iid='3988167', p_addresstypeid='1', p_address='Р‘*******,********,**************,****************,**.**,***.*0'
+00:17:46,872 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_ADDRESS : p_iid='3988167', p_addresstypeid='3', p_address='Р ***************************Рљ'
+00:17:46,873 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_PHONE : p_iid='3988167', p_phonetypeid='2', p_phone='', p_mobileoperator='0'
+00:17:46,874 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_PHONE : p_iid='3988167', p_phonetypeid='102', p_phone='', p_mobileoperator='0'
+00:17:46,874 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_PHONE : p_iid='3988167', p_phonetypeid='4', p_phone='', p_mobileoperator='0'
+00:17:46,875 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_PHONE : p_iid='3988167', p_phonetypeid='3', p_phone='3**********0', p_mobileoperator='1'
+00:17:46,876 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_PHONE : p_iid='3988167', p_phonetypeid='101', p_phone='', p_mobileoperator='0'
+00:17:46,877 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_CLIENTDATA_PHONE : p_iid='3988167', p_phonetypeid='5', p_phone='', p_mobileoperator='0'
+00:17:46,877 FINE  [by.softclub.mpz.settings.MpzSettings] (default task-17) execute SQL=begin ? := getrgitemvalueex(?,?,?); end;
+00:17:46,878 FINE  [by.softclub.mpz.settings.MpzSettings] (default task-17) execute SQL=begin ? := getrgitemvalueex(?,?,?); end;
+00:17:46,878 FINE  [by.softclub.mpz.settings.MpzSettings] (default task-17) execute SQL=begin ? := getrgitemvalueex(?,?,?); end;
+00:17:46,878 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-17) QuerySelect execute SelectClientIncomes{clientId=5083212, incomePeriod=IncomePeriod{monthCount=3}, retailIncomeTypes=1,2,3}
+00:17:46,878 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-17) executeQuery SQL=SELECT  C.CONTRACTID, C.CONTRACTNUM, CI.TRANDATE, CI.OPERDATE, CI.ACTIONCODEID, CI.ACTIONNAME, CI.OPERSUM,         CI.OPERCURRENCY, CI.TYPEINCOME FROM    VBRS_CLIENTOPERS_INCOME CI         INNER JOIN BRSCONTRACTS C ON C.CONTRACTID = CI.CONTRACTID WHERE   CI.CLIENTID = ?   AND   TRUNC(CI.OPERDATE) BETWEEN ? AND ?   AND   CI.TYPEINCOME IN (1,2,3) ORDER BY CI.OPERDATE
+00:17:46,882 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.ADD_INCOME : p_iid='3988167', p_regdate='Wed Apr 01 00:00:00 MSK 2026', p_postdate='Wed Apr 01 00:00:00 MSK 2026', p_incomename='', p_incomeamount='0', p_contractid='null'
+00:17:46,883 FINE  [by.softclub.mpz.income.MonthIncomeCalculator] (default task-17) Starting MonthIncomeCalculator...
+00:17:46,883 FINE  [by.softclub.mpz.income.MonthIncomeCalculator] (default task-17) Month income (Wed Apr 01 00:00:00 MSK 2026, 0). Income{contractId=null, contractNum=null, regDate=Wed Apr 01 00:00:00 MSK 2026, postDate=Wed Apr 01 00:00:00 MSK 2026, name=, amount=0, incomeType=0}
+00:17:46,883 FINE  [by.softclub.mpz.income.MonthIncomeCalculator] (default task-17) Finish MonthIncomeCalculator.
+00:17:46,883 INFO  [by.softclub.mpz.income.MonthIncomeCalculator] (default task-17) Р§РёСЃР»Рѕ РјРµСЃСЏС†РµРІ 1, РІ РєРѕС‚РѕСЂС‹С… РѕР±РЅР°СЂСѓР¶РµРЅС‹ РїРѕСЃС‚СѓРїР»РµРЅРёСЏ РјРµРЅРµРµ, С‡РµРј РјРёРЅРёРјР°Р»СЊРЅРѕ РґРѕРїСѓСЃС‚РёРјРѕРµ 2, РІ РєР°С‡РµСЃС‚РІРµ СЃСЂРµРґРЅРµРіРѕ РґРѕС…РѕРґР° РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ 0.
+00:17:46,883 FINE  [by.softclub.mpz.income.MonthIncomeCalculator] (default task-17) Р Р°СЃС‡РµС‚ СЃСЂРµРґРЅРµРјРµСЃСЏС‡РЅРѕРіРѕ РґРѕС…РѕРґР° Р·Р°РєРѕРЅС‡РµРЅ, РЎСЂРµРґРЅРµРјРµСЃСЏС‡РЅС‹Р№ РґРѕС…РѕРґ: 0.
+00:17:46,883 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.GET_BPM
+00:17:46,884 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.GET_BPM result : 509.62
+00:17:46,884 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.DEFINE_NOINCOMEDOC : p_iid='3988167', p_noincomedoc='true'
+00:17:46,885 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.GET_APPROVED_CLAIM_COUNT : p_iid='3988167'
+00:17:46,885 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.GET_APPROVED_CLAIM_COUNT result : 0
+00:17:46,885 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.IS_NO_INCOME_DOC : p_iid='3988167'
+00:17:46,885 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-17) Oracle call PKGCLM_ONLINE.IS_NO_INCOME_DOC result : 1
+00:17:46,885 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-17) QuerySelect execute SelectWorkplaceIncome_APB{proc=SessionContext{iid=3988167, type=PRC_APB_CLAIM_CREATE}}
+00:17:46,886 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-17) executeQuery SQL=WITH
+LD AS ( SELECT LD.* FROM CLM_OL_LOANDATA LD WHERE LD.IID = ? ),
+IL AS ( SELECT IL.IID, IL.INCLOSSID, IL.AMOUNTMONTH, IL.CURRID FROM CLM_OL_INCLOSS IL 
+        WHERE IL.IID = (SELECT IID FROM LD) AND IL.INCLOSSKINDID = ? AND ROWNUM = 1 )
+SELECT LD.*, IL.INCLOSSID, IL.AMOUNTMONTH MONTHINCOME, IL.CURRID FROM LD LEFT JOIN IL ON LD.IID = IL.IID
+00:17:46,960 INFO  [by.softclub.mpzws.MpzWs] (default task-17) handle-response: <?xml version='1.0' encoding='UTF-8'?>
+<mpz-response>
+  <session>
+    <process-id>PRC_APB_CLAIM_CREATE</process-id>
+    <process-instance>3988167</process-instance>
+  </session>
+  <result>
+    <type>VIEW</type>
+    <message></message>
+  </result>
+  <data>
+    <object>
+      <name>WORKPLACE_INCOME</name>
+      <ROWSET>
+        <ROW>
+          <IID>3988167</IID>
+          <INCLOSSID/>
+          <WORKPLACE/>
+          <MONTHINCOME/>
+          <WORKPLACEPOSITION/>
+          <PHONEWORK/>
+          <WORKPLACEDATE/>
+          <CURRID/>
+        </ROW>
+      </ROWSET>
+      <caption>РњРµСЃС‚Рѕ СЂР±Р°РѕС‚С‹ Рё РїРѕР»СѓС‡Р°РµРјС‹Р№ СЃСЂРµРґРЅРµРјРµСЃСЏС‡РЅС‹Р№ СЂР°Р·РјРµСЂ РґРѕС…РѕРґР°</caption>
+      <declaration>
+        <fields>
+          <field>
+            <name>IID</name>
+            <caption>РљРѕРґ</caption>
+            <data-type>NUMBER</data-type>
+            <meta-type>NUMBER</meta-type>
+            <nullable>false</nullable>
+            <precision>24</precision>
+            <scale>0</scale>
+          </field>
+          <field>
+            <name>INCLOSSID</name>
+            <caption>РљРѕРґ РґРѕС…РѕРґР°</caption>
+            <data-type>NUMBER</data-type>
+            <meta-type>NUMBER</meta-type>
+            <nullable>true</nullable>
+            <precision>24</precision>
+            <scale>0</scale>
+          </field>
+          <field>
+            <name>WORKPLACE</name>
+            <caption>РњРµСЃС‚Рѕ СЂР°Р±РѕС‚С‹</caption>
+            <data-type>STRING</data-type>
+            <meta-type>STRING</meta-type>
+            <nullable>false</nullable>
+            <data-length>255</data-length>
+          </field>
+          <field>
+            <name>MONTHINCOME</name>
+            <caption>РЎСЂРµРґРЅРµРјРµСЃСЏС‡РЅС‹Р№ СЂР°Р·РјРµСЂ РїРѕР»СѓС‡Р°РµРјРѕРіРѕ РґРѕС…РѕРґР° Р·Р° 3 РїРѕСЃР»РµРґРЅРёС… РјРµСЃСЏС†Р°, СЂСѓР±.</caption>
+            <data-type>NUMBER</data-type>
+            <meta-type>AMOUNT</meta-type>
+            <nullable>false</nullable>
+            <precision>24</precision>
+            <scale>2</scale>
+            <validate>
+              <min-value>0</min-value>
+              <max-value>99999999</max-value>
+            </validate>
+          </field>
+          <field>
+            <name>WORKPLACEPOSITION</name>
+            <caption>Р”РѕР»Р¶РЅРѕСЃС‚СЊ</caption>
+            <data-type>STRING</data-type>
+            <meta-type>STRING</meta-type>
+            <nullable>false</nullable>
+            <data-length>255</data-length>
+          </field>
+          <field>
+            <name>PHONEWORK</name>
+            <caption>Р Р°Р±РѕС‡РёР№ С‚РµР»РµС„РѕРЅ (С‚РѕР»СЊРєРѕ С†РёС„СЂС‹ Р±РµР· РїСЂРѕР±РµР»РѕРІ Рё Р·РЅР°РєРѕРІ РїСЂРµРїРёРЅР°РЅРёСЏ)</caption>
+            <data-type>STRING</data-type>
+            <meta-type>PHONE</meta-type>
+            <nullable>false</nullable>
+            <data-length>12</data-length>
+            <validate>
+              <min-length>12</min-length>
+              <max-length>12</max-length>
+            </validate>
+          </field>
+          <field>
+            <name>WORKPLACEDATE</name>
+            <caption>Р”Р°С‚Р° РїСЂРёС‘РјР° РЅР° СЂР°Р±РѕС‚Сѓ</caption>
+            <data-type>DATETIME</data-type>
+            <meta-type>DATE</meta-type>
+            <nullable>false</nullable>
+            <time>false</time>
+            <validate>
+              <min-value>1900-01-01</min-value>
+              <max-value>2026-07-24</max-value>
+            </validate>
+            <date-format>dd.MM.yyyy</date-format>
+          </field>
+          <field>
+            <name>CURRID</name>
+            <caption>Р’Р°Р»СЋС‚Р° РґРѕС…РѕРґР°</caption>
+            <data-type>NUMBER</data-type>
+            <meta-type>CURRENCY</meta-type>
+            <nullable>false</nullable>
+            <precision>24</precision>
+            <scale>0</scale>
+            <default-value>933</default-value>
+          </field>
+        </fields>
+        <primary-key>
+          <field>IID</field>
+        </primary-key>
+      </declaration>
+    </object>
+  </data>
+  <view>
+    <caption>РЎРІРµРґРµРЅРёСЏ Рѕ РґРѕС…РѕРґР°С…</caption>
+    <widgets>
+      <widget>
+        <widget-type>STATIC_TEXT</widget-type>
+        <read-only>true</read-only>
+        <static-text>
+          <text>&lt;b>РЈРІР°Р¶Р°РµРјС‹Р№ РєР»РёРµРЅС‚!&lt;/b>&lt;br/>Р’ СЃРІСЏР·Рё СЃ РѕС‚СЃСѓС‚СЃС‚РІРёРµРј РІ Р±Р°РЅРєРµ РёРЅС„РѕСЂРјР°С†РёРё Рѕ Р’Р°С€РёС… РґРѕС…РѕРґР°С…, РІ СЃР»СѓС‡Р°Рµ РµСЃР»Рё Р’С‹ РѕС‚СЂР°Р±РѕС‚Р°Р»Рё РЅР° С‚РµРєСѓС‰РµРј РјРµСЃС‚Рµ СЂР°Р±РѕС‚С‹ Р±РѕР»РµРµ 3-С… РєР°Р»РµРЅРґР°СЂРЅС‹С… РјРµСЃСЏС†РµРІ, РїСЂРµРґР»Р°РіР°РµРј Р’Р°Рј РѕС„РѕСЂРјРёС‚СЊ Р·Р°СЏРІРєСѓ РЅР° РїРѕР»СѓС‡РµРЅРёРµ РєСЂРµРґРёС‚Р° Р±РµР· РїСЂРµРґРѕСЃС‚Р°РІР»РµРЅРёСЏ РґРѕРєСѓРјРµРЅС‚Р°, РїРѕРґС‚РІРµСЂР¶РґР°СЋС‰РµРіРѕ РїРѕР»СѓС‡РµРЅРёРµ РґРѕС…РѕРґР°.</text>
+        </static-text>
+      </widget>
+      <widget>
+        <caption>РњРµСЃС‚Рѕ СЂР°Р±РѕС‚С‹</caption>
+        <widget-type>INPUT</widget-type>
+        <read-only>false</read-only>
+        <input>
+          <object>WORKPLACE_INCOME</object>
+          <field>WORKPLACE</field>
+        </input>
+      </widget>
+      <widget>
+        <caption>Р”РѕР»Р¶РЅРѕСЃС‚СЊ</caption>
+        <widget-type>INPUT</widget-type>
+        <read-only>false</read-only>
+        <input>
+          <object>WORKPLACE_INCOME</object>
+          <field>WORKPLACEPOSITION</field>
+        </input>
+      </widget>
+      <widget>
+        <caption>Р Р°Р±РѕС‡РёР№ С‚РµР»РµС„РѕРЅ (С‚РѕР»СЊРєРѕ С†РёС„СЂС‹ Р±РµР· РїСЂРѕР±РµР»РѕРІ Рё Р·РЅР°РєРѕРІ РїСЂРµРїРёРЅР°РЅРёСЏ)</caption>
+        <widget-type>INPUT</widget-type>
+        <read-only>false</read-only>
+        <input>
+          <object>WORKPLACE_INCOME</object>
+          <field>PHONEWORK</field>
+        </input>
+      </widget>
+      <widget>
+        <caption>РЎСЂРµРґРЅРµРјРµСЃСЏС‡РЅС‹Р№ СЂР°Р·РјРµСЂ РїРѕР»СѓС‡Р°РµРјРѕРіРѕ РґРѕС…РѕРґР° Р·Р° 3 РїРѕСЃР»РµРґРЅРёС… РјРµСЃСЏС†Р°, СЂСѓР±.</caption>
+        <widget-type>AMOUNT_INPUT</widget-type>
+        <read-only>false</read-only>
+        <amount-input>
+          <amount>
+            <object>WORKPLACE_INCOME</object>
+            <field>MONTHINCOME</field>
+          </amount>
+          <currency>
+            <object>WORKPLACE_INCOME</object>
+            <field>CURRID</field>
+          </currency>
+          <fixed-currency>true</fixed-currency>
+        </amount-input>
+      </widget>
+      <widget>
+        <caption>Р”Р°С‚Р° РїСЂРёС‘РјР° РЅР° СЂР°Р±РѕС‚Сѓ</caption>
+        <widget-type>INPUT</widget-type>
+        <read-only>false</read-only>
+        <input>
+          <object>WORKPLACE_INCOME</object>
+          <field>WORKPLACEDATE</field>
+        </input>
+      </widget>
+    </widgets>
+  </view>
+  <workflow>
+    <flow>
+      <name>CC_NOINCOME_CONFIRM</name>
+      <flow-type>NEXT</flow-type>
+      <caption>РћС„РѕСЂРјРёС‚СЊ РєСЂРµРґРёС‚ Р±РµР· РґРѕРєСѓРјРµРЅС‚РѕРІ РїРѕРґС‚РІРµСЂР¶РґР°СЋС‰РёС… РїРѕР»СѓС‡РµРЅРёРµ РґРѕС…РѕРґРѕРІ</caption>
+      <authenticate>false</authenticate>
+      <send-data>
+        <object>WORKPLACE_INCOME</object>
+      </send-data>
+    </flow>
+    <flow>
+      <name>CC_NOINCOME_REJECT</name>
+      <flow-type>BACK</flow-type>
+      <caption>РћС‚РєР°Р·Р°С‚СЊСЃСЏ РѕС‚ РѕС„РѕСЂРјР»РµРЅРёСЏ РєСЂРµРґРёС‚Р°</caption>
+      <authenticate>false</authenticate>
+      <send-data/>
+    </flow>
+  </workflow>
+</mpz-response>
+00:17:50,521 INFO  [by.softclub.mpzws.MpzWs] (default task-26) handle-request: <?xml version='1.0' encoding='UTF-8'?>
+<mpz-request>
+  <session>
+    <process-id>PRC_APB_CLAIM_CREATE</process-id>
+    <process-instance>3988167</process-instance>
+  </session>
+  <data>
+    <object>
+      <ROWSET/>
+    </object>
+  </data>
+  <workflow>
+    <flow>
+      <name>CC_NOINCOME_REJECT</name>
+    </flow>
+  </workflow>
+</mpz-request>
+00:17:50,538 INFO  [by.softclub.mpzws.MpzWs] (default task-26) handle-response: <?xml version='1.0' encoding='UTF-8'?>
+<mpz-response>
+  <session>
+    <process-id>PRC_APB_CLAIM_CREATE</process-id>
+    <process-instance>3988167</process-instance>
+  </session>
+  <result>
+    <type>END_OF_PROCESS</type>
+    <message>Р—Р°СЏРІРєР° РЅР° РєСЂРµРґРёС‚ РѕС‚РєР»РѕРЅРµРЅР°.</message>
+  </result>
+</mpz-response>
+00:18:59,323 INFO  [by.softclub.mpzws.MpzWs] (default task-2) handle-request: <?xml version='1.0' encoding='UTF-8'?>
+<mpz-request>
+  <session>
+    <process-id>PRC_APB_CLAIM_CREATE</process-id>
+    <process-instance>3988163</process-instance>
+  </session>
+  <data>
+    <object>
+      <name>AGREEMENTS_FOR_CONFIRMATION</name>
+      <ROWSET>
+        <ROW>
+          <ISAGCLIENTDATA>true</ISAGCLIENTDATA>
+          <ISAGCREDITREP>true</ISAGCREDITREP>
+          <ISAGOFFENCES>true</ISAGOFFENCES>
+          <ISAGMVD>true</ISAGMVD>
+          <ISAGSOCIALPAYMENTS>true</ISAGSOCIALPAYMENTS>
+          <ISAGSOCIALINSURANCE>true</ISAGSOCIALINSURANCE>
+          <ISAGSMSINFORMING>true</ISAGSMSINFORMING>
+          <ISSCAMINFOCONFIRM>true</ISSCAMINFOCONFIRM>
+          <IID>3988163</IID>
+          <AGREEMENTSCONTENT>...Long data was here...</AGREEMENTSCONTENT>
+          <AGREEMENTSFILENAME>РђРРЎ4BF6_01655_.pdf</AGREEMENTSFILENAME>
+          <AGREEMENTSSIGN/>
+          <SMSINFORMINGCONTENT>...Long data was here...</SMSINFORMINGCONTENT>
+          <SMSINFORMINGFILENAME>РЎРњРЎ5B49_01659_.pdf</SMSINFORMINGFILENAME>
+          <SMSINFORMINGSIGN/>
+          <ISAGINFORES>false</ISAGINFORES>
+          <ISAGERIP>false</ISAGERIP>
+          <ISAGOUTSOURCER>false</ISAGOUTSOURCER>
+          <SCAMINFOCONTENT/>
+          <SCAMINFOFILENAME/>
+          <SCAMINFOGSIGN/>
+        </ROW>
+      </ROWSET>
+    </object>
+  </data>
+  <workflow>
+    <flow>
+      <name>CC_CONFIRM_CLIENT_DATA</name>
+    </flow>
+  </workflow>
+</mpz-request>
+00:18:59,323 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectProcessContext{proc=SessionContext{iid=3988163, type=PRC_APB_CLAIM_CREATE}}
+00:18:59,323 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT LD.LOANDATAID, S.SID, LD.PERSONALNUM, LD.STDCNTRKINDID, LD.PRODKINDID, LD.AGENTID, NVL(SA1.NVALUE, 0) ISCASCADERATE, LD.CLIENTID
+                FROM CLM_OL_LOANDATA LD 
+                     LEFT JOIN ( 
+                       CLM_SUBJECTS S 
+                       INNER JOIN CLM_SUBJROLES SR ON SR.SID = S.SID AND SR.SUBJROLEID = 1 
+                     ) ON S.LOANDATAID = LD.LOANDATAID 
+                     LEFT  JOIN STDCONTRACTATTRS SA1 ON SA1.STDCNTRKINDID = LD.STDCNTRKINDID AND SA1.ATTRREFID = 'ISCASCADINGRATE' WHERE LD.IID = ?
+00:18:59,324 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.SET_AGREEMENT : p_iid='3988163', p_agreement_type='2'
+00:18:59,325 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.SET_AGREEMENT : p_iid='3988163', p_agreement_type='9'
+00:18:59,326 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.DEFINE_ONLINE_AGREEMENT : p_iid='3988163', p_agreement_type='4', p_iidtypeid='1', p_isagreement='1'
+00:18:59,327 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.DEFINE_ONLINE_AGREEMENT : p_iid='3988163', p_agreement_type='12', p_iidtypeid='1', p_isagreement='1'
+00:18:59,328 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.DEFINE_ONLINE_AGREEMENT : p_iid='3988163', p_agreement_type='13', p_iidtypeid='1', p_isagreement='1'
+00:18:59,329 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.DEFINE_ONLINE_AGREEMENT : p_iid='3988163', p_agreement_type='14', p_iidtypeid='1', p_isagreement='1'
+00:18:59,330 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.DEFINE_ONLINE_AGREEMENT : p_iid='3988163', p_agreement_type='15', p_iidtypeid='1', p_isagreement='1'
+00:18:59,330 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelectExisting execute SelectClaimData{proc=SessionContext{iid=3988163, type=PRC_APB_CLAIM_CREATE}}
+00:18:59,331 FINE  [by.softclub.mpz.settings.MpzSettings] (default task-2) execute SQL=begin ? := getrgitemvalueex(?,?,?); end;
+00:18:59,331 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT  LD.IID, LD.REQUESTSUM LOANSUM, NVL(LD.LOANCURRENCYID, ?) LOANCURRENCYID, LD.LOANTERM, LD.STDCNTRKINDID 
+FROM    CLM_OL_LOANDATA LD
+WHERE   LD.IID = ?
+00:18:59,332 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_STCCNTRKIND_NEED_AGREEMENTS : p_stdcntrkindid='203222', p_bankid='964'
+00:18:59,332 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_STCCNTRKIND_NEED_AGREEMENTS result : 0
+00:18:59,332 INFO  [by.softclub.mpz.client.wserv.WservClient] (default task-2) Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ РѕС‚С‡С‘С‚Р° 'AGREEMENT_INFORESREP' (7807) РґР»СЏ РѕР±СЉРµРєС‚Р° 3988163...
+00:18:59,962 INFO  [by.softclub.mpzws.MpzWs] (default task-32) handle-request: <?xml version='1.0' encoding='UTF-8'?>
+<mpz-request>
+  <session>
+    <process-id>PRC_APB_CLAIM_CREATE</process-id>
+    <process-instance>3988164</process-instance>
+  </session>
+  <data>
+    <object>
+      <name>AGREEMENTS_FOR_CONFIRMATION</name>
+      <ROWSET>
+        <ROW>
+          <ISAGCLIENTDATA>true</ISAGCLIENTDATA>
+          <ISAGCREDITREP>true</ISAGCREDITREP>
+          <ISAGOFFENCES>true</ISAGOFFENCES>
+          <ISAGMVD>true</ISAGMVD>
+          <ISAGSOCIALPAYMENTS>true</ISAGSOCIALPAYMENTS>
+          <ISAGSOCIALINSURANCE>true</ISAGSOCIALINSURANCE>
+          <ISAGSMSINFORMING>true</ISAGSMSINFORMING>
+          <ISSCAMINFOCONFIRM>true</ISSCAMINFOCONFIRM>
+          <IID>3988164</IID>
+          <AGREEMENTSCONTENT>...Long data was here...</AGREEMENTSCONTENT>
+          <AGREEMENTSFILENAME>РђРРЎ8691_01710_.pdf</AGREEMENTSFILENAME>
+          <AGREEMENTSSIGN/>
+          <SMSINFORMINGCONTENT>...Long data was here...</SMSINFORMINGCONTENT>
+          <SMSINFORMINGFILENAME>РЎРњРЎ991A_01715_.pdf</SMSINFORMINGFILENAME>
+          <SMSINFORMINGSIGN/>
+          <ISAGINFORES>false</ISAGINFORES>
+          <ISAGERIP>false</ISAGERIP>
+          <ISAGOUTSOURCER>false</ISAGOUTSOURCER>
+          <SCAMINFOCONTENT/>
+          <SCAMINFOFILENAME/>
+          <SCAMINFOGSIGN/>
+        </ROW>
+      </ROWSET>
+    </object>
+  </data>
+  <workflow>
+    <flow>
+      <name>CC_CONFIRM_CLIENT_DATA</name>
+    </flow>
+  </workflow>
+</mpz-request>
+00:18:59,962 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-32) QuerySelect execute SelectProcessContext{proc=SessionContext{iid=3988164, type=PRC_APB_CLAIM_CREATE}}
+00:18:59,962 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-32) executeQuery SQL=SELECT LD.LOANDATAID, S.SID, LD.PERSONALNUM, LD.STDCNTRKINDID, LD.PRODKINDID, LD.AGENTID, NVL(SA1.NVALUE, 0) ISCASCADERATE, LD.CLIENTID
+                FROM CLM_OL_LOANDATA LD 
+                     LEFT JOIN ( 
+                       CLM_SUBJECTS S 
+                       INNER JOIN CLM_SUBJROLES SR ON SR.SID = S.SID AND SR.SUBJROLEID = 1 
+                     ) ON S.LOANDATAID = LD.LOANDATAID 
+                     LEFT  JOIN STDCONTRACTATTRS SA1 ON SA1.STDCNTRKINDID = LD.STDCNTRKINDID AND SA1.ATTRREFID = 'ISCASCADINGRATE' WHERE LD.IID = ?
+00:18:59,963 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-32) Oracle call PKGCLM_ONLINE.SET_AGREEMENT : p_iid='3988164', p_agreement_type='2'
+00:18:59,964 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-32) Oracle call PKGCLM_ONLINE.SET_AGREEMENT : p_iid='3988164', p_agreement_type='9'
+00:18:59,965 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-32) Oracle call PKGCLM_ONLINE.DEFINE_ONLINE_AGREEMENT : p_iid='3988164', p_agreement_type='4', p_iidtypeid='1', p_isagreement='1'
+00:18:59,966 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-32) Oracle call PKGCLM_ONLINE.DEFINE_ONLINE_AGREEMENT : p_iid='3988164', p_agreement_type='12', p_iidtypeid='1', p_isagreement='1'
+00:18:59,967 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-32) Oracle call PKGCLM_ONLINE.DEFINE_ONLINE_AGREEMENT : p_iid='3988164', p_agreement_type='13', p_iidtypeid='1', p_isagreement='1'
+00:18:59,968 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-32) Oracle call PKGCLM_ONLINE.DEFINE_ONLINE_AGREEMENT : p_iid='3988164', p_agreement_type='14', p_iidtypeid='1', p_isagreement='1'
+00:18:59,969 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-32) Oracle call PKGCLM_ONLINE.DEFINE_ONLINE_AGREEMENT : p_iid='3988164', p_agreement_type='15', p_iidtypeid='1', p_isagreement='1'
+00:18:59,970 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-32) QuerySelectExisting execute SelectClaimData{proc=SessionContext{iid=3988164, type=PRC_APB_CLAIM_CREATE}}
+00:18:59,970 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-32) executeQuery SQL=SELECT  LD.IID, LD.REQUESTSUM LOANSUM, NVL(LD.LOANCURRENCYID, ?) LOANCURRENCYID, LD.LOANTERM, LD.STDCNTRKINDID 
+FROM    CLM_OL_LOANDATA LD
+WHERE   LD.IID = ?
+00:18:59,970 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-32) Oracle call PKGCLM_ONLINE.IS_STCCNTRKIND_NEED_AGREEMENTS : p_stdcntrkindid='203267', p_bankid='964'
+00:18:59,970 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-32) Oracle call PKGCLM_ONLINE.IS_STCCNTRKIND_NEED_AGREEMENTS result : 0
+00:18:59,970 INFO  [by.softclub.mpz.client.wserv.WservClient] (default task-32) Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ РѕС‚С‡С‘С‚Р° 'AGREEMENT_INFORESREP' (7807) РґР»СЏ РѕР±СЉРµРєС‚Р° 3988164...
+00:19:02,595 INFO  [by.softclub.mpz.client.wserv.WservClient] (default task-2) Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ РѕС‚С‡С‘С‚Р° 'AGREEMENT_INFORESREP' (7807) РґР»СЏ РѕР±СЉРµРєС‚Р° 3988163 РѕРєРѕРЅС‡РµРЅРѕ.
+00:19:02,595 INFO  [by.softclub.mpz.client.wserv.WservClient] (default task-2) РџРѕР»СѓС‡РµРЅРёРµ РєРѕРЅС‚РµРЅС‚Р° #25909901...
+00:19:03,530 INFO  [by.softclub.mpz.client.wserv.WservClient] (default task-32) Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ РѕС‚С‡С‘С‚Р° 'AGREEMENT_INFORESREP' (7807) РґР»СЏ РѕР±СЉРµРєС‚Р° 3988164 РѕРєРѕРЅС‡РµРЅРѕ.
+00:19:03,530 INFO  [by.softclub.mpz.client.wserv.WservClient] (default task-32) РџРѕР»СѓС‡РµРЅРёРµ РєРѕРЅС‚РµРЅС‚Р° #25909899...
+00:19:03,627 FINE  [by.softclub.mpz.client.wserv.WservClient] (default task-2) РџРѕР»СѓС‡РµРЅРёРµ РєРѕРЅС‚РµРЅС‚Р° #25909901 РѕРєРѕРЅС‡РµРЅРѕ.
+00:19:03,627 INFO  [by.softclub.mpz.client.wserv.WservClient] (default task-2) Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ РѕС‚С‡С‘С‚Р° 'AGREEMENT_SMS' (7821) РґР»СЏ РѕР±СЉРµРєС‚Р° 3988163...
+00:19:04,332 INFO  [by.softclub.mpz.client.wserv.WservClient] (default task-2) Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ РѕС‚С‡С‘С‚Р° 'AGREEMENT_SMS' (7821) РґР»СЏ РѕР±СЉРµРєС‚Р° 3988163 РѕРєРѕРЅС‡РµРЅРѕ.
+00:19:04,332 INFO  [by.softclub.mpz.client.wserv.WservClient] (default task-2) РџРѕР»СѓС‡РµРЅРёРµ РєРѕРЅС‚РµРЅС‚Р° #25909902...
+00:19:04,605 FINE  [by.softclub.mpz.client.wserv.WservClient] (default task-32) РџРѕР»СѓС‡РµРЅРёРµ РєРѕРЅС‚РµРЅС‚Р° #25909899 РѕРєРѕРЅС‡РµРЅРѕ.
+00:19:04,605 INFO  [by.softclub.mpz.client.wserv.WservClient] (default task-32) Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ РѕС‚С‡С‘С‚Р° 'AGREEMENT_SMS' (7821) РґР»СЏ РѕР±СЉРµРєС‚Р° 3988164...
+00:19:04,656 FINE  [by.softclub.mpz.client.wserv.WservClient] (default task-2) РџРѕР»СѓС‡РµРЅРёРµ РєРѕРЅС‚РµРЅС‚Р° #25909902 РѕРєРѕРЅС‡РµРЅРѕ.
+00:19:04,656 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_AGREEMENT : p_iid='3988163', p_iidtypeid='1', p_agtypeid='4'
+00:19:04,657 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_AGREEMENT result : 0
+00:19:04,657 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_AGREEMENT : p_iid='3988163', p_iidtypeid='1', p_agtypeid='12'
+00:19:04,657 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_AGREEMENT result : 0
+00:19:04,657 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_AGREEMENT : p_iid='3988163', p_iidtypeid='1', p_agtypeid='13'
+00:19:04,658 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_AGREEMENT result : 0
+00:19:04,658 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_AGREEMENT : p_iid='3988163', p_iidtypeid='1', p_agtypeid='14'
+00:19:04,658 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_AGREEMENT result : 0
+00:19:04,658 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_AGREEMENT : p_iid='3988163', p_iidtypeid='1', p_agtypeid='15'
+00:19:04,658 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_AGREEMENT result : 0
+00:19:04,658 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_STCCNTRKIND_NEED_AGREEMENTS : p_stdcntrkindid='203222', p_bankid='964'
+00:19:04,658 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_STCCNTRKIND_NEED_AGREEMENTS result : 0
+00:19:04,658 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectStdCntrAttrValuesRef{attrRefId=LIVETYPEID, where=, orderby=, clazz=class by.softclub.mpz.data.ObjectStdCntrLiveTypeRef}
+00:19:04,658 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT ATTRVALUE, ATTRVALUETEXT, NULL SELECTED FROM STDCNTRATTRVALUESREF WHERE ATTRREFID = ? AND INSTR(ATTRVALUETEXT, '**')=0  ORDER BY  SORTORDER
+00:19:04,659 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectStdCntrAttrValuesRef{attrRefId=FAMILYSTATUS, where=, orderby=, clazz=class by.softclub.mpz.data.ObjectStdCntrFamilyStatusRef}
+00:19:04,659 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT ATTRVALUE, ATTRVALUETEXT, NULL SELECTED FROM STDCNTRATTRVALUESREF WHERE ATTRREFID = ? AND INSTR(ATTRVALUETEXT, '**')=0  ORDER BY  SORTORDER
+00:19:04,659 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectStdCntrAttrValuesRef{attrRefId=ARMYRELATIONTYPEID, where=, orderby=, clazz=class by.softclub.mpz.data.ObjectStdCntrArmyRelationTypeRef}
+00:19:04,659 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT ATTRVALUE, ATTRVALUETEXT, NULL SELECTED FROM STDCNTRATTRVALUESREF WHERE ATTRREFID = ? AND INSTR(ATTRVALUETEXT, '**')=0  ORDER BY  SORTORDER
+00:19:04,659 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectStdCntrAttrValuesRef{attrRefId=EDUCATIONKINDID, where=, orderby=, clazz=class by.softclub.mpz.data.ObjectStdCntrEducationKindRef}
+00:19:04,659 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT ATTRVALUE, ATTRVALUETEXT, NULL SELECTED FROM STDCNTRATTRVALUESREF WHERE ATTRREFID = ? AND INSTR(ATTRVALUETEXT, '**')=0  ORDER BY  SORTORDER
+00:19:04,659 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectMobileOperatorRef{}
+00:19:04,659 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=with k as (select keyid from rgkeys where keyname = 'РРЅС‚РµРіСЂР°С†РёСЏ СЃ SmsBAPB')
+select to_number_def(itemvalue, 2) MOBILEOPERATORID, 'A1' MOBILEOPERATORNAME from rgitems where keyid = (select keyid from k) and itemname = 'OperCodeVelcom' union all
+select to_number_def(itemvalue, 1) MOBILEOPERATORID,    'MTC' MOBILEOPERATORNAME from rgitems where keyid = (select keyid from k) and itemname = 'OperCodeMTS' union all
+select to_number_def(itemvalue, 3) MOBILEOPERATORID,   'Life' MOBILEOPERATORNAME from rgitems where keyid = (select keyid from k) and itemname = 'OperCodeLife' union all
+SELECT NULL, NULL FROM DUAL order by 1
+00:19:04,661 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectLoanData_APB{proc=SessionContext{iid=3988163, type=PRC_APB_CLAIM_CREATE}}
+00:19:04,661 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT LD.*, ? OTHEREXPENSESCURRID, NULL PROPKINDID FROM CLM_OL_LOANDATA LD WHERE LD.IID = ?
+00:19:04,662 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectCurrency{currencySet=BYN}
+00:19:04,662 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT CURRID, CURRNAME, ISO FROM CURRENCIES WHERE CURRID IN (933) UNION ALL SELECT NULL, NULL, NULL FROM DUAL ORDER BY ISO NULLS FIRST
+00:19:04,662 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectIndustrysRef{bankCode=APB}
+00:19:04,662 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT T.ATTRVALUE INDUSTRYID, T.ATTRVALUETEXT INDUSTRYNAME FROM STDCNTRATTRVALUESREF T WHERE ATTRREFID='INDUSTRYID' AND INSTR(ATTRVALUETEXT, '**')=0 ORDER BY T.SORTORDER
+00:19:04,667 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectStdCntrAttrValuesRef{attrRefId=LINEID, where=, orderby=, clazz=class by.softclub.mpz.data.ObjectStdCntrBusinessKindRef}
+00:19:04,667 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT ATTRVALUE, ATTRVALUETEXT, NULL SELECTED FROM STDCNTRATTRVALUESREF WHERE ATTRREFID = ? AND INSTR(ATTRVALUETEXT, '**')=0  ORDER BY  SORTORDER
+00:19:04,667 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectInformationSourceRef {}
+00:19:04,667 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT T.INFORMATIONSOURCEID ID, T.INFORMATIONSOURCENAME NAME FROM CLM_INFORMATIONSOURCEREF T WHERE SYSDATE BETWEEN T.BEGINDATE AND T.ENDDATE ORDER BY T.SORTORDER
+00:19:04,668 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_INCOME_DOC : p_iid='3988163'
+00:19:04,668 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-2) Oracle call PKGCLM_ONLINE.IS_NO_INCOME_DOC result : 0
+00:19:04,669 FINE  [by.softclub.mpz.settings.MpzSettings] (default task-2) execute SQL=begin ? := getrgitemvalueex(?,?,?); end;
+00:19:04,669 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) QuerySelect execute SelectLoanDataValidate{proc=SessionContext{iid=3988163, type=PRC_APB_CLAIM_CREATE}}
+00:19:04,669 FINE  [by.softclub.mpz.sql.MpzQueryExecutor] (default task-2) executeQuery SQL=SELECT fr.fr, LD.IID, R.MAXSUM CNTRMAXSUM, R.MINSUM CNTRMINSUM, R.MAXPERIOD LOANMAXTERM, R.MINPERIOD LOANMINTERM
+FROM  (select fixrtl fr from dual) fr 
+INNER JOIN vbrs_contractkindsforposnt R ON fr.fr=fr.fr 
+LEFT JOIN CLM_OL_LOANDATA LD on LD.IID = ?
+WHERE R.CONTRACTKIND = (select LD.STDCNTRKINDID from CLM_OL_LOANDATA LD WHERE LD.IID = ?)
+00:19:05,150 INFO  [by.softclub.mpzws.MpzWs] (default task-12) handle-request: <?xml version='1.0' encoding='UTF-8'?>
+<mpz-request>
+  <session>
+    <process-id>PRC_APB_VIEW_CLAIM</process-id>
+    <process-instance>0</process-instance>
+  </session>
+  <data>
+    <object>
+      <name>CLIENT</name>
+      <ROWSET>
+        <ROW>
+          <PERSONALNUM>430XXXXXXXXPB9</PERSONALNUM>
+        </ROW>
+      </ROWSET>
+    </object>
+  </data>
+</mpz-request>
+00:19:05,150 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-12) Oracle call PKGCLM_ONLINE.INITIALIZE_ONLINE_VIEWCLAIM : p_personalnum='4************9'
+00:19:05,153 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-12) Oracle call PKGCLM_ONLINE.INITIALIZE_ONLINE_VIEWCLAIM result : 9373859
+00:19:05,153 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-12) Oracle call PKGCLM_ONLINE.GET_OFFER_STATUS : p_personalnum='4************9'
+00:19:05,154 FINE  [by.softclub.mpz.sql.PkgClmOnline] (default task-12) Oracle call PKGCLM_ONLINE.GET_OFFER_STATUS result : 0

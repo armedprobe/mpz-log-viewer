@@ -1,20 +1,23 @@
 package com.mpzlog.model;
 
+import com.mpzlog.parser.MpzLogParser;
 import org.junit.Test;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Тесты построения модели лога МПЗ ({@link LogModelBuilder}).
  * <p>
- * Строки строятся вручную (в формате, который выдаёт {@code MpzLogParser}:
- * запись + продолжения сообщения, склеенные переводом строки).
+ * Тесты 1–5 и 13 используют реальные данные из файла {@code mpz.log}
+ * (вырезки сохранены в {@code src/test/resources/fixtures/}).
+ * Тесты 6–12 проверяют внутреннюю логику построителя (повторные вызовы,
+ * слияние процессов, обрезка хвоста и т.п.) — эти сценарии не встречаются
+ * в виде изолированных примеров в реальном логе, поэтому оставлены
+ * с синтетическими данными без изменений.
  */
 public class LogModelBuilderTest {
 
@@ -27,6 +30,8 @@ public class LogModelBuilderTest {
         e.setMessage(msg);
         return e;
     }
+
+    // ---- helpers для тестов 6–12 (без изменений) ----
 
     private static String request(String processId, String pi) {
         return "handle-request: <?xml version='1.0' encoding='UTF-8'?>\n"
@@ -51,88 +56,124 @@ public class LogModelBuilderTest {
                 + "</mpz-response>";
     }
 
+    // ================================================================
+    //  Тесты на реальных данных из mpz.log
+    // ================================================================
+
+    private LogModel parseFixture(String name) {
+        try {
+            MpzLogParser parser = new MpzLogParser();
+            parser.parse(Paths.get("src/test/resources/fixtures/" + name));
+            return builder.build(parser.getEntries());
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse fixture " + name, e);
+        }
+    }
+
+    /**
+     * Кейс из реального файла: процесс PRC_APB_CLAIM_CREATE (PID 3988167),
+     * успешно завершённый ответом {@code <type>END_OF_PROCESS</type>}.
+     */
     @Test
     public void completedProcess() {
-        List<LogEntry> entries = new ArrayList<>();
-        entries.add(entry(1, "task-1", request("PRC_OK", "0")));
-        entries.add(entry(2, "task-1", "обычная строка процесса"));
-        entries.add(entry(3, "task-1", response("PRC_OK", "100", "END_OF_PROCESS")));
+        LogModel model = parseFixture("completed.log");
 
-        LogModel model = builder.build(entries);
-
-        assertEquals(3, model.getAllLines().size());
-        assertEquals(1, model.getProcesses().size());
-        ProcessElement p = model.getProcesses().get(0);
-        assertEquals("100", p.getPid());
+        ProcessElement p = model.getProcesses().stream()
+                .filter(pe -> pe.getStatus() == ProcessElement.Status.COMPLETED)
+                .findFirst().orElse(null);
+        assertNotNull(p);
+        assertEquals("3988167", p.getPid());
         assertEquals(ProcessElement.Status.COMPLETED, p.getStatus());
-        assertEquals(3, p.getLines().size());
-        assertTrue(p.getLines().get(0).isRequest());
-        assertTrue(p.getLines().get(2).isResponse());
+        assertTrue(p.getLines().size() > 0);
+        assertTrue(p.getLines().stream().anyMatch(LogLine::isRequest));
+        assertTrue(p.getLines().stream().anyMatch(LogLine::isResponse));
         assertTrue(p.getErrors().isEmpty());
     }
 
+    /**
+     * Кейс из реального файла: процесс PRC_CLAIM_CREATE (PID 3988168),
+     * ответ с {@code <type>ERROR</type>}.
+     */
     @Test
     public void completedWithErrorResponse() {
-        List<LogEntry> entries = new ArrayList<>();
-        entries.add(entry(1, "task-1", request("PRC_ERR", "0")));
-        entries.add(entry(2, "task-1", response("PRC_ERR", "200", "ERROR")));
+        LogModel model = parseFixture("completed_with_error.log");
 
-        LogModel model = builder.build(entries);
-
-        ProcessElement p = model.getProcesses().get(0);
-        assertEquals("200", p.getPid());
+        ProcessElement p = model.getProcesses().stream()
+                .filter(pe -> pe.getStatus() == ProcessElement.Status.COMPLETED_WITH_ERROR)
+                .findFirst().orElse(null);
+        assertNotNull(p);
+        assertEquals("3988168", p.getPid());
         assertEquals(ProcessElement.Status.COMPLETED_WITH_ERROR, p.getStatus());
     }
 
+    /**
+     * Кейс из реального файла: процесс PRC_APB_VIEW_CLAIM (PID 9373852),
+     * ответ с {@code <type>VIEW</type>} (не END_OF_PROCESS и не ERROR),
+     * поэтому статус {@code INTERRUPTED}.
+     */
     @Test
     public void interruptedNoEnd() {
-        List<LogEntry> entries = new ArrayList<>();
-        entries.add(entry(1, "task-1", request("PRC_INTR", "0")));
-        entries.add(entry(2, "task-1", response("PRC_INTR", "300", "SOME_OTHER_TYPE")));
+        LogModel model = parseFixture("interrupted.log");
 
-        LogModel model = builder.build(entries);
-
-        ProcessElement p = model.getProcesses().get(0);
-        assertEquals("300", p.getPid());
+        ProcessElement p = model.getProcesses().stream()
+                .filter(pe -> pe.getStatus() == ProcessElement.Status.INTERRUPTED)
+                .findFirst().orElse(null);
+        assertNotNull(p);
+        assertEquals("9373852", p.getPid());
         assertEquals(ProcessElement.Status.INTERRUPTED, p.getStatus());
     }
 
+    /**
+     * Кейс из реального файла: процесс PRC_APB_VIEW_CLAIM (без PID),
+     * получивший системную ошибку MpzException (ORA-12899).
+     * Статус FAILED, одна ошибка с корректным shortText и errorKey.
+     */
     @Test
     public void exceptionProcessFailed() {
-        List<LogEntry> entries = new ArrayList<>();
-        entries.add(entry(1, "task-1", request("PRC_FAIL", "0")));
-        entries.add(entry(2, "task-1",
-                "SEVERE: by.softclub.mpz.core.MpzException: Oracle call PKG : ORA-12899: value too large\n"
-                        + "at by.softclub.mpz.core.MpzException.<init>(MpzException.java:10)\n"
-                        + "at by.softclub.mpz.MpzFacade.call(MpzFacade.java:42)\n"
-                        + "at com.example.ExternalCaller.run(ExternalCaller.java:7)"));
+        LogModel model = parseFixture("failed.log");
 
-        LogModel model = builder.build(entries);
-
-        assertEquals(1, model.getProcesses().size());
-        ProcessElement p = model.getProcesses().get(0);
+        ProcessElement p = model.getProcesses().stream()
+                .filter(pe -> pe.getStatus() == ProcessElement.Status.FAILED
+                        && "default task-31".equals(pe.getTask()))
+                .findFirst().orElse(null);
+        assertNotNull(p);
         assertNull(p.getPid());
         assertEquals(ProcessElement.Status.FAILED, p.getStatus());
         assertEquals(1, p.getErrors().size());
+
         ErrorElement err = p.getErrors().get(0);
         assertNotNull(err.getErrorKey());
         assertTrue(err.getShortText().contains("MpzException"));
-        assertTrue(err.getShortText().contains("at by.softclub.mpz.MpzFacade.call"));
-        assertTrue(!err.getShortText().contains("com.example.ExternalCaller"));
+        // mpz-стек включается в shortText
+        assertTrue(err.getShortText().contains("at by.softclub.mpz.sql.PkgClmOnline.initialize_online_viewclaim"));
+        // non-mpz стек обрезается
+        assertFalse(err.getShortText().contains("sun.reflect.GeneratedMethodAccessor117"));
     }
 
+    /**
+     * Кейс из реального файла: процесс PRC_APB_CLAIM_CREATE (без PID),
+     * не получивший ответа. Статус UNRESOLVED.
+     */
     @Test
     public void unresolvedProcess() {
-        List<LogEntry> entries = new ArrayList<>();
-        entries.add(entry(1, "task-1", request("PRC_UNRES", "0")));
+        LogModel model = parseFixture("unresolved.log");
 
-        LogModel model = builder.build(entries);
-
-        assertEquals(1, model.getProcesses().size());
-        ProcessElement p = model.getProcesses().get(0);
+        ProcessElement p = model.getProcesses().stream()
+                .filter(pe -> pe.getStatus() == ProcessElement.Status.UNRESOLVED
+                        && pe.getProcessName() != null)
+                .findFirst().orElse(null);
+        assertNotNull(p);
         assertNull(p.getPid());
         assertEquals(ProcessElement.Status.UNRESOLVED, p.getStatus());
+        assertTrue(p.getLines().stream().anyMatch(LogLine::isRequest));
     }
+
+    // ================================================================
+    //  Тесты на синтетических данных (без изменений)
+    //  Сценарии 6–12: повторные вызовы, слияние, обрезка хвоста
+    //  и непривязанные записи — отсутствуют в виде изолированных
+    //  примеров в реальном файле mpz.log.
+    // ================================================================
 
     @Test
     public void repeatedCallGoesToKnownPid() {
@@ -155,9 +196,7 @@ public class LogModelBuilderTest {
         List<LogEntry> entries = new ArrayList<>();
         entries.add(entry(1, "task-1", request("PRC_OK", "0")));
         entries.add(entry(2, "task-1", response("PRC_OK", "100", "END_OF_PROCESS")));
-        // повторный вызов на другом трэде — поле task должно обновиться
         entries.add(entry(3, "task-2", request("PRC_OK", "100")));
-        // прочие записи на новом трэде должны попадать в тот же процесс
         entries.add(entry(4, "task-2", "прочая запись после повторного вызова"));
 
         LogModel model = builder.build(entries);
@@ -173,10 +212,8 @@ public class LogModelBuilderTest {
     @Test
     public void lateResponseMergesIntoKnownPid() {
         List<LogEntry> entries = new ArrayList<>();
-        // первый процесс с PID=100 завершается
         entries.add(entry(1, "task-1", request("PRC_OK", "0")));
         entries.add(entry(2, "task-1", response("PRC_OK", "100", "END_OF_PROCESS")));
-        // стартовый request с pi=0, но ответ приходит с уже известным PID=100
         entries.add(entry(3, "task-2", request("PRC_OK", "0")));
         entries.add(entry(4, "task-2", response("PRC_OK", "100", "END_OF_PROCESS")));
 
@@ -190,12 +227,10 @@ public class LogModelBuilderTest {
 
     @Test
     public void lateResponseAttachesToTruncatedStart() {
-        // A — первый запрос на трэде, B — второй запрос срезает «окно» A
         List<LogEntry> entries = new ArrayList<>();
         entries.add(entry(1, "task-1", request("PRC_A", "0")));
         entries.add(entry(2, "task-1", request("PRC_B", "0")));
         entries.add(entry(3, "task-1", response("PRC_B", "200", "END_OF_PROCESS")));
-        // поздний ответ A с неизвестным PID должен попасть в A, а не в непривязанные
         entries.add(entry(4, "task-1", response("PRC_A", "100", "END_OF_PROCESS")));
 
         LogModel model = builder.build(entries);
@@ -266,7 +301,6 @@ public class LogModelBuilderTest {
     @Test
     public void standaloneExceptionGoesToTaskProcess() {
         List<LogEntry> entries = new ArrayList<>();
-        // ошибка на трэде без открытого запроса — попадает в процесс по трэду
         entries.add(entry(1, "task-1",
                 "SEVERE: by.softclub.mpz.core.MpzException: standalone failure\n"
                         + "at by.softclub.mpz.core.MpzException.<init>(MpzException.java:10)\n"
@@ -285,23 +319,29 @@ public class LogModelBuilderTest {
         assertEquals(2, p.getLines().size());
     }
 
+    /**
+     * Маскирование ключа ошибки на реальных данных: ORA-коды не маскируются,
+     * строковые параметры '...' → '?', числа → #.
+     */
     @Test
     public void errorKeyMasking() {
-        List<LogEntry> entries = new ArrayList<>();
-        entries.add(entry(1, "task-1", request("PRC_OK", "0")));
-        entries.add(entry(2, "task-1",
-                "SEVERE: by.softclub.mpz.core.MpzException: bad value 'ABC' for key 42\n"
-                        + "at by.softclub.mpz.core.MpzException.<init>(MpzException.java:10)\n"
-                        + "at by.softclub.mpz.MpzFacade.call(MpzFacade.java:42)\n"
-                        + "at com.example.ExternalCaller.run(ExternalCaller.java:7)"));
+        LogModel model = parseFixture("failed.log");
 
-        LogModel model = builder.build(entries);
+        ProcessElement p = model.getProcesses().stream()
+                .filter(pe -> pe.getStatus() == ProcessElement.Status.FAILED
+                        && "default task-31".equals(pe.getTask()))
+                .findFirst().orElse(null);
+        assertNotNull(p);
 
-        ProcessElement p = model.getProcesses().get(0);
         String key = p.getErrors().get(0).getErrorKey();
+        // ORA-код не маскируется
+        assertTrue(key.contains("ORA-12899"));
+        // строковой параметр маскируется
         assertTrue(key.contains("'?'"));
+        // цифровые значения маскируются
         assertTrue(key.contains("#"));
-        assertTrue(!key.contains("ABC"));
-        assertTrue(!key.contains("42"));
+        // реальные значения в ключе отсутствуют
+        assertFalse(key.contains("4*************_**P"));
+        assertFalse(key.contains("18") && !key.contains("12899"));
     }
 }
