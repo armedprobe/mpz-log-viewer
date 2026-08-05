@@ -7,6 +7,26 @@
     -fx-background-color: transparent;
 }
 
+.toolbar-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 2 6 2 6;
+    -fx-cursor: hand;
+    -fx-font-size: 14px;
+    -fx-text-fill: #5a5e66;
+}
+
+.toolbar-button:hover {
+    -fx-text-fill: #1c1e21;
+    -fx-background-color: #f0f2f5;
+    -fx-background-radius: 4;
+}
+
+.cancel-button {
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+}
+
 .toolbar-label {
     -fx-font-size: 12px;
     -fx-text-fill: #5a5e66;

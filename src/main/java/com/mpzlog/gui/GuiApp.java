@@ -23,7 +23,6 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -90,8 +89,8 @@ public class GuiApp extends Application {
     private ListView<String> rawContentList;
     private TableView<ErrorGroupInfo> errorTable;
     private TableView<ProcessElement> processListView;
-    private ComboBox<String> filterCombo;
     private Label displayModeLabel;
+    private Button cancelButton;
     private Label statusBar;
     private GuiSettings settings;
     private Stage stage;
@@ -354,12 +353,14 @@ public class GuiApp extends Application {
             }
             if (e.getClickCount() == 2) {
                 toggleActiveProcess(sel);
-            } else if (e.getClickCount() == 1) {
+            } else if (e.getClickCount() == 1 && activeProcess == null) {
                 displayModeLabel.setText("Все строки");
                 if (activeErrorFilter != null) {
                     activeErrorFilter = null;
                     errorTable.getSelectionModel().clearSelection();
-                    applyFilter();
+                    originalProcessOrder.clear();
+                    originalProcessOrder.addAll(allProcesses);
+                    processListView.getItems().setAll(allProcesses);
                 }
                 rawContentList.getItems().setAll(allRawLines);
                 showProcessStart(sel);
@@ -367,26 +368,12 @@ public class GuiApp extends Application {
         });
         processListView.setPlaceholder(new Label("Нет процессов для отображения"));
 
-        filterCombo = new ComboBox<>();
-        filterCombo.getItems().addAll(
-                "Ошибочные процессы",
-                "Процессы с PID",
-                "Все процессы"
-        );
-        filterCombo.setValue("Ошибочные процессы");
-        filterCombo.setTooltip(new Tooltip("Фильтр списка процессов"));
-        filterCombo.setOnAction(e -> applyFilter());
-
         Button openButton = new Button("Открыть файл");
         openButton.setOnAction(e -> openFile(stage));
 
-        Label filterLabel = new Label("Фильтр:");
-        filterLabel.getStyleClass().add("toolbar-label");
-        ToolBar filterToolbar = new ToolBar(openButton, filterLabel, filterCombo);
+        ToolBar filterToolbar = new ToolBar(openButton);
         filterToolbar.getStyleClass().add("panel-toolbar");
         HBox.setHgrow(openButton, Priority.NEVER);
-        HBox.setHgrow(filterLabel, Priority.NEVER);
-        HBox.setHgrow(filterCombo, Priority.NEVER);
 
         VBox leftPanel = new VBox(filterToolbar, processListView);
         leftPanel.getStyleClass().add("left-panel");
@@ -406,7 +393,17 @@ public class GuiApp extends Application {
         displayModeLabel.getStyleClass().add("toolbar-label");
         displayModeLabel.setStyle("-fx-font-weight: bold;");
 
-        ToolBar centerToolbar = new ToolBar(displayModeLabel);
+        cancelButton = new Button("✕");
+        cancelButton.getStyleClass().addAll("toolbar-button", "cancel-button");
+        cancelButton.setVisible(false);
+        cancelButton.setManaged(false);
+        cancelButton.setOnAction(e -> {
+            if (activeProcess != null) {
+                toggleActiveProcess(activeProcess);
+            }
+        });
+
+        ToolBar centerToolbar = new ToolBar(displayModeLabel, cancelButton);
         centerToolbar.getStyleClass().add("panel-toolbar");
 
         VBox centerBox = new VBox(centerToolbar, rawContentList);
@@ -557,6 +554,8 @@ public class GuiApp extends Application {
         processListView.getItems().clear();
         errorTable.getItems().clear();
         displayModeLabel.setText("Все строки");
+        cancelButton.setVisible(false);
+        cancelButton.setManaged(false);
         rawContentList.getItems().clear();
 
         Thread worker = new Thread(() -> {
@@ -608,54 +607,8 @@ public class GuiApp extends Application {
         if (allProcesses == null || allProcesses.isEmpty()) {
             return;
         }
-        boolean hasErrors = errorProcesses != null && !errorProcesses.isEmpty();
-        String selectedFilter = filterCombo.getValue();
-        if (selectedFilter == null || (!hasErrors && "Ошибочные процессы".equals(selectedFilter))) {
-            selectedFilter = hasErrors ? "Ошибочные процессы" : "Все процессы";
-            filterCombo.setValue(selectedFilter);
-        }
-        applyFilterWithSelection(selectedFilter);
-    }
-
-    private void applyFilter() {
-        if (allProcesses == null) {
-            return;
-        }
-        activeErrorFilter = null;
-        String filter = filterCombo.getValue();
-        if (filter == null) {
-            filter = "Все процессы";
-        }
-        applyFilterWithSelection(filter);
-    }
-
-    private void applyFilterWithSelection(String filter) {
-        processListView.getItems().clear();
-        originalProcessOrder.clear();
-        List<ProcessElement> filtered;
-        switch (filter) {
-            case "Ошибочные процессы":
-                filtered = errorProcesses != null ? errorProcesses : allProcesses;
-                break;
-            case "Процессы с PID":
-                filtered = new ArrayList<>();
-                for (ProcessElement p : allProcesses) {
-                    if (p.getPid() != null) {
-                        filtered.add(p);
-                    }
-                }
-                break;
-            case "Все процессы":
-            default:
-                filtered = allProcesses;
-                break;
-        }
-        if (filtered.isEmpty()) {
-            return;
-        }
-        originalProcessOrder.clear();
-        originalProcessOrder.addAll(filtered);
-        processListView.getItems().setAll(filtered);
+        originalProcessOrder.addAll(allProcesses);
+        processListView.getItems().setAll(allProcesses);
     }
 
     private void showProcessStart(ProcessElement p) {
@@ -680,10 +633,14 @@ public class GuiApp extends Application {
             rawContentList.getItems().setAll(allRawLines);
             rawContentList.scrollTo(0);
             processListView.getSelectionModel().clearSelection();
+            cancelButton.setVisible(false);
+            cancelButton.setManaged(false);
         } else {
             activeProcess = p;
             displayModeLabel.setText("PID: " + p.pidLabel());
             showProcessLines(p);
+            cancelButton.setVisible(true);
+            cancelButton.setManaged(true);
         }
         processListView.refresh();
     }
@@ -881,7 +838,7 @@ public class GuiApp extends Application {
             col.sortTypeProperty().addListener((obs, oldType, newType) -> {
                 if (oldType == TableColumn.SortType.DESCENDING
                         && newType == TableColumn.SortType.ASCENDING) {
-                    Platform.runLater(() -> t.getSortOrder().clear());
+                    Platform.runLater(() -> table.getSortOrder().clear());
                 }
             });
         }
@@ -918,10 +875,11 @@ public class GuiApp extends Application {
         if (info.getErrorKey().equals(activeErrorFilter)) {
             activeErrorFilter = null;
             errorTable.getSelectionModel().clearSelection();
-            applyFilter();
+            originalProcessOrder.clear();
+            originalProcessOrder.addAll(allProcesses);
+            processListView.getItems().setAll(allProcesses);
         } else {
             activeErrorFilter = info.getErrorKey();
-            filterCombo.setValue("Ошибочные процессы");
             List<ProcessElement> filtered = new ArrayList<>(info.getProcesses());
             filtered.sort(Comparator.comparingInt(ProcessElement::firstLineNumber));
             originalProcessOrder.clear();
