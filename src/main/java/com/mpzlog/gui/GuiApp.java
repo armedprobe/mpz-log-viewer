@@ -1,6 +1,5 @@
 package com.mpzlog.gui;
 
-import com.mpzlog.model.ErrorElement;
 import com.mpzlog.model.ErrorGroupInfo;
 import com.mpzlog.model.LogEntry;
 import com.mpzlog.model.LogLine;
@@ -12,6 +11,7 @@ import com.mpzlog.parser.MpzLogParser;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.css.PseudoClass;
 import javafx.geometry.Insets;
@@ -22,6 +22,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -35,6 +36,7 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
@@ -89,9 +91,10 @@ public class GuiApp extends Application {
     private TableView<ErrorGroupInfo> errorTable;
     private TableView<ProcessElement> processListView;
     private ComboBox<String> filterCombo;
-    private ComboBox<String> displayModeCombo;
+    private Label displayModeLabel;
     private Label statusBar;
     private GuiSettings settings;
+    private Stage stage;
     private long openSeq;
     private Path currentPath;
     private List<ProcessElement> allProcesses;
@@ -101,6 +104,8 @@ public class GuiApp extends Application {
     private ProcessElement activeProcess;
     private boolean scrollbarConfigured;
     private String activeErrorFilter;
+    private List<ProcessElement> originalProcessOrder;
+    private List<ErrorGroupInfo> originalErrorOrder;
 
     public static void main(String[] args) {
         launch(args);
@@ -108,6 +113,7 @@ public class GuiApp extends Application {
 
     @Override
     public void start(Stage stage) {
+        this.stage = stage;
         settings = new GuiSettings();
 
         rawContentList = new ListView<>();
@@ -130,6 +136,9 @@ public class GuiApp extends Application {
         MenuItem copyItem = new MenuItem("Копировать");
         copyItem.setOnAction(e -> copyRawContentSelection());
         rawContentMenu.getItems().add(copyItem);
+        MenuItem goToItem = new MenuItem("Перейти");
+        goToItem.setOnAction(e -> showGoToLineDialog());
+        rawContentMenu.getItems().add(goToItem);
         rawContentList.setContextMenu(rawContentMenu);
         rawContentList.skinProperty().addListener((obs, oldSkin, newSkin) -> {
             if (newSkin != null) {
@@ -150,10 +159,11 @@ public class GuiApp extends Application {
             @Override
             protected void updateItem(Number item, boolean empty) {
                 super.updateItem(item, empty);
-                setAlignment(Pos.CENTER_RIGHT);
+                setAlignment(Pos.CENTER);
                 setText(empty || item == null ? null : String.valueOf(item.intValue()));
             }
         });
+        errCountCol.setComparator((a, b) -> Integer.compare(a.intValue(), b.intValue()));
 
         TableColumn<ErrorGroupInfo, String> errKeyCol = new TableColumn<>("Ошибка");
         errKeyCol.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().getErrorKey()));
@@ -180,7 +190,21 @@ public class GuiApp extends Application {
 
         errorTable.getColumns().add(errCountCol);
         errorTable.getColumns().add(errKeyCol);
+        errKeyCol.setComparator(String::compareToIgnoreCase);
         errKeyCol.prefWidthProperty().bind(errorTable.widthProperty().subtract(errCountCol.getPrefWidth() + 4));
+
+        ContextMenu errorContextMenu = new ContextMenu();
+        MenuItem copyErrorItem = new MenuItem("Копировать ошибку");
+        copyErrorItem.setOnAction(e -> {
+            ErrorGroupInfo sel = errorTable.getSelectionModel().getSelectedItem();
+            if (sel != null) {
+                ClipboardContent content = new ClipboardContent();
+                content.putString(sel.getErrorKey());
+                Clipboard.getSystemClipboard().setContent(content);
+            }
+        });
+        errorContextMenu.getItems().add(copyErrorItem);
+        errorTable.setContextMenu(errorContextMenu);
 
         errorTable.setRowFactory(tv -> {
             TableRow<ErrorGroupInfo> row = new TableRow<>();
@@ -194,6 +218,9 @@ public class GuiApp extends Application {
             });
             return row;
         });
+
+        originalErrorOrder = new ArrayList<>();
+        setupSortReset(errorTable, originalErrorOrder);
 
         processListView = new TableView<>();
         processListView.getStyleClass().add("process-table");
@@ -237,6 +264,14 @@ public class GuiApp extends Application {
                 }
             }
         });
+        pidCol.setComparator((a, b) -> {
+            String pa = a.getPid();
+            String pb = b.getPid();
+            if (pa == null && pb == null) return 0;
+            if (pa == null) return -1;
+            if (pb == null) return 1;
+            return Long.compare(Long.parseLong(pa), Long.parseLong(pb));
+        });
 
         TableColumn<ProcessElement, ProcessElement> nameCol = new TableColumn<>("Имя процесса");
         nameCol.setCellValueFactory(cd -> new javafx.beans.property.SimpleObjectProperty<>(cd.getValue()));
@@ -253,6 +288,14 @@ public class GuiApp extends Application {
                 }
             }
         });
+        nameCol.setComparator((a, b) -> {
+            String na = a.getProcessName();
+            String nb = b.getProcessName();
+            if (na == null && nb == null) return 0;
+            if (na == null) return 1;
+            if (nb == null) return -1;
+            return na.compareToIgnoreCase(nb);
+        });
 
         TableColumn<ProcessElement, ProcessElement> procCountCol = new TableColumn<>("Запросов/ответов");
         procCountCol.setPrefWidth(52);
@@ -267,6 +310,8 @@ public class GuiApp extends Application {
                 setText(empty || p == null ? null : String.valueOf(reqRespCount(p)));
             }
         });
+        procCountCol.setComparator((a, b) ->
+                Integer.compare(reqRespCount(a), reqRespCount(b)));
 
         processListView.getColumns().add(iconCol);
         processListView.getColumns().add(pidCol);
@@ -277,6 +322,9 @@ public class GuiApp extends Application {
         nameCol.prefWidthProperty().bind(
                 processListView.widthProperty().subtract(fixedWidth + 4));
 
+        originalProcessOrder = new ArrayList<>();
+        setupSortReset(processListView, originalProcessOrder);
+
         processListView.setRowFactory(tv -> new TableRow<ProcessElement>() {
             @Override
             protected void updateItem(ProcessElement item, boolean empty) {
@@ -285,31 +333,58 @@ public class GuiApp extends Application {
                 pseudoClassStateChanged(ACTIVE_PROCESS, active);
             }
         });
+
+        ContextMenu processContextMenu = new ContextMenu();
+        MenuItem copyPidItem = new MenuItem("Копировать PID");
+        copyPidItem.setOnAction(e -> {
+            ProcessElement sel = processListView.getSelectionModel().getSelectedItem();
+            if (sel != null) {
+                ClipboardContent content = new ClipboardContent();
+                content.putString(sel.pidLabel());
+                Clipboard.getSystemClipboard().setContent(content);
+            }
+        });
+        processContextMenu.getItems().add(copyPidItem);
+        processListView.setContextMenu(processContextMenu);
+
         processListView.setOnMouseClicked(e -> {
             ProcessElement sel = processListView.getSelectionModel().getSelectedItem();
-            if (sel != null && e.getClickCount() == 1) {
-                showProcessStart(sel);
+            if (sel == null) {
+                return;
             }
-            if (sel != null && e.getClickCount() == 2) {
+            if (e.getClickCount() == 2) {
                 toggleActiveProcess(sel);
+            } else if (e.getClickCount() == 1) {
+                displayModeLabel.setText("Все строки");
+                if (activeErrorFilter != null) {
+                    activeErrorFilter = null;
+                    errorTable.getSelectionModel().clearSelection();
+                    applyFilter();
+                }
+                rawContentList.getItems().setAll(allRawLines);
+                showProcessStart(sel);
             }
         });
         processListView.setPlaceholder(new Label("Нет процессов для отображения"));
 
         filterCombo = new ComboBox<>();
         filterCombo.getItems().addAll(
-                "Только ошибочные",
-                "Все с PID",
+                "Ошибочные процессы",
+                "Процессы с PID",
                 "Все процессы"
         );
-        filterCombo.setValue("Только ошибочные");
+        filterCombo.setValue("Ошибочные процессы");
         filterCombo.setTooltip(new Tooltip("Фильтр списка процессов"));
         filterCombo.setOnAction(e -> applyFilter());
 
+        Button openButton = new Button("Открыть файл");
+        openButton.setOnAction(e -> openFile(stage));
+
         Label filterLabel = new Label("Фильтр:");
-        filterLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #5a5e66;");
-        ToolBar filterToolbar = new ToolBar(filterLabel, filterCombo);
-        filterToolbar.setStyle("-fx-padding: 6 10 6 10; -fx-background-color: transparent;");
+        filterLabel.getStyleClass().add("toolbar-label");
+        ToolBar filterToolbar = new ToolBar(openButton, filterLabel, filterCombo);
+        filterToolbar.getStyleClass().add("panel-toolbar");
+        HBox.setHgrow(openButton, Priority.NEVER);
         HBox.setHgrow(filterLabel, Priority.NEVER);
         HBox.setHgrow(filterCombo, Priority.NEVER);
 
@@ -327,21 +402,12 @@ public class GuiApp extends Application {
         statusBar.getStyleClass().add("status-bar");
         statusBar.setMaxWidth(Double.MAX_VALUE);
 
-        Label displayLabel = new Label("Отображение:");
-        displayLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #5a5e66;");
-        displayModeCombo = new ComboBox<>();
-        displayModeCombo.getItems().addAll(
-                "Все строки",
-                "Выбранный процесс"
-        );
-        displayModeCombo.setValue("Все строки");
-        displayModeCombo.setTooltip(new Tooltip("Режим отображения в основной области"));
-        displayModeCombo.setOnAction(e -> applyDisplayMode());
+        displayModeLabel = new Label("Все строки");
+        displayModeLabel.getStyleClass().add("toolbar-label");
+        displayModeLabel.setStyle("-fx-font-weight: bold;");
 
-        ToolBar centerToolbar = new ToolBar(displayLabel, displayModeCombo);
-        centerToolbar.setStyle("-fx-padding: 6 10 6 10; -fx-background-color: transparent;");
-        HBox.setHgrow(displayLabel, Priority.NEVER);
-        HBox.setHgrow(displayModeCombo, Priority.NEVER);
+        ToolBar centerToolbar = new ToolBar(displayModeLabel);
+        centerToolbar.getStyleClass().add("panel-toolbar");
 
         VBox centerBox = new VBox(centerToolbar, rawContentList);
         centerBox.getStyleClass().add("center-panel");
@@ -355,6 +421,8 @@ public class GuiApp extends Application {
         root.setBottom(bottomWithStatus);
 
         Scene scene = new Scene(root, 1000, 650);
+        scene.getStylesheets().add(
+                GuiApp.class.getResource("/gui/light_theme.css").toExternalForm());
         scene.getStylesheets().add(
                 GuiApp.class.getResource("/gui/app.css").toExternalForm());
         scene.getAccelerators().put(
@@ -488,8 +556,7 @@ public class GuiApp extends Application {
         allEntries = new ArrayList<>();
         processListView.getItems().clear();
         errorTable.getItems().clear();
-        displayModeCombo.getItems().setAll("Все строки", "Выбранный процесс");
-        displayModeCombo.setValue("Все строки");
+        displayModeLabel.setText("Все строки");
         rawContentList.getItems().clear();
 
         Thread worker = new Thread(() -> {
@@ -537,13 +604,14 @@ public class GuiApp extends Application {
 
     private void populateProcessList() {
         processListView.getItems().clear();
+        originalProcessOrder.clear();
         if (allProcesses == null || allProcesses.isEmpty()) {
             return;
         }
         boolean hasErrors = errorProcesses != null && !errorProcesses.isEmpty();
         String selectedFilter = filterCombo.getValue();
-        if (selectedFilter == null || (!hasErrors && "Только ошибочные".equals(selectedFilter))) {
-            selectedFilter = hasErrors ? "Только ошибочные" : "Все процессы";
+        if (selectedFilter == null || (!hasErrors && "Ошибочные процессы".equals(selectedFilter))) {
+            selectedFilter = hasErrors ? "Ошибочные процессы" : "Все процессы";
             filterCombo.setValue(selectedFilter);
         }
         applyFilterWithSelection(selectedFilter);
@@ -563,12 +631,13 @@ public class GuiApp extends Application {
 
     private void applyFilterWithSelection(String filter) {
         processListView.getItems().clear();
+        originalProcessOrder.clear();
         List<ProcessElement> filtered;
         switch (filter) {
-            case "Только ошибочные":
+            case "Ошибочные процессы":
                 filtered = errorProcesses != null ? errorProcesses : allProcesses;
                 break;
-            case "Все с PID":
+            case "Процессы с PID":
                 filtered = new ArrayList<>();
                 for (ProcessElement p : allProcesses) {
                     if (p.getPid() != null) {
@@ -584,6 +653,8 @@ public class GuiApp extends Application {
         if (filtered.isEmpty()) {
             return;
         }
+        originalProcessOrder.clear();
+        originalProcessOrder.addAll(filtered);
         processListView.getItems().setAll(filtered);
     }
 
@@ -605,28 +676,14 @@ public class GuiApp extends Application {
     private void toggleActiveProcess(ProcessElement p) {
         if (activeProcess == p) {
             activeProcess = null;
-            displayModeCombo.getItems().set(1, "Выбранный процесс");
-            displayModeCombo.setValue("Все строки");
+            displayModeLabel.setText("Все строки");
+            rawContentList.getItems().setAll(allRawLines);
+            rawContentList.scrollTo(0);
+            processListView.getSelectionModel().clearSelection();
         } else {
             activeProcess = p;
-            displayModeCombo.getItems().set(1, "PID: " + p.pidLabel());
-            displayModeCombo.setValue("PID: " + p.pidLabel());
-        }
-        applyDisplayMode();
-    }
-
-    private void applyDisplayMode() {
-        String mode = displayModeCombo.getValue();
-        if (mode == null || "Все строки".equals(mode)) {
-            activeProcess = null;
-            displayModeCombo.getItems().set(1, "Выбранный процесс");
-            rawContentList.getItems().setAll(allRawLines);
-            rawContentList.scrollTo(0);
-        } else if (activeProcess != null) {
-            showProcessLines(activeProcess);
-        } else {
-            rawContentList.getItems().setAll(allRawLines);
-            rawContentList.scrollTo(0);
+            displayModeLabel.setText("PID: " + p.pidLabel());
+            showProcessLines(p);
         }
         processListView.refresh();
     }
@@ -673,7 +730,10 @@ public class GuiApp extends Application {
         List<ErrorGroupInfo> items = model.getFrequentErrors();
         if (items.isEmpty()) {
             errorTable.getItems().clear();
+            originalErrorOrder.clear();
         } else {
+            originalErrorOrder.clear();
+            originalErrorOrder.addAll(items);
             errorTable.getItems().setAll(items);
         }
     }
@@ -709,20 +769,20 @@ public class GuiApp extends Application {
         Color color;
         switch (p.getStatus()) {
             case COMPLETED:
-                color = Color.web("#3A8F3A");
+                color = Color.GREEN;
                 break;
             case COMPLETED_WITH_ERROR:
-                color = Color.web("#E0A92F");
+                color = Color.YELLOW;
                 break;
             case INTERRUPTED:
-                color = Color.web("#C06028");
+                color = Color.RED;
                 break;
             case FAILED:
                 color = Color.BLACK;
                 break;
             case UNRESOLVED:
             default:
-                color = Color.web("#8A8A8A");
+                color = Color.DARKGREY;
                 break;
         }
         Circle c = new Circle(5.0, color);
@@ -807,6 +867,53 @@ public class GuiApp extends Application {
         Clipboard.getSystemClipboard().setContent(content);
     }
 
+    private static <T> void setupSortReset(TableView<T> table, List<T> originalOrderRef) {
+        List<T> original = new ArrayList<>(originalOrderRef);
+        table.sortPolicyProperty().set(t -> {
+            if (t.getSortOrder().isEmpty()) {
+                t.getItems().setAll(original);
+                return true;
+            }
+            return TableView.DEFAULT_SORT_POLICY.call(t);
+        });
+        for (TableColumn<T, ?> col : table.getColumns()) {
+            if (!col.isSortable()) continue;
+            col.sortTypeProperty().addListener((obs, oldType, newType) -> {
+                if (oldType == TableColumn.SortType.DESCENDING
+                        && newType == TableColumn.SortType.ASCENDING) {
+                    Platform.runLater(() -> t.getSortOrder().clear());
+                }
+            });
+        }
+    }
+
+    private void showGoToLineDialog() {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Перейти к строке");
+        dialog.setHeaderText(null);
+        dialog.setContentText("Номер строки:");
+        String result = dialog.showAndWait().orElse(null);
+        if (result == null) {
+            return;
+        }
+        try {
+            int line = Integer.parseInt(result.trim());
+            if (line < 1 || line > allRawLines.size()) {
+                return;
+            }
+            String target = allRawLines.get(line - 1);
+            int index = rawContentList.getItems().indexOf(target);
+            if (index < 0) {
+                rawContentList.scrollTo(line - 1);
+            } else {
+                rawContentList.getSelectionModel().clearSelection();
+                rawContentList.getSelectionModel().select(index);
+                rawContentList.scrollTo(index);
+            }
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
     private void toggleErrorFilter(ErrorGroupInfo info) {
         if (info.getErrorKey().equals(activeErrorFilter)) {
             activeErrorFilter = null;
@@ -814,8 +921,11 @@ public class GuiApp extends Application {
             applyFilter();
         } else {
             activeErrorFilter = info.getErrorKey();
+            filterCombo.setValue("Ошибочные процессы");
             List<ProcessElement> filtered = new ArrayList<>(info.getProcesses());
             filtered.sort(Comparator.comparingInt(ProcessElement::firstLineNumber));
+            originalProcessOrder.clear();
+            originalProcessOrder.addAll(filtered);
             processListView.getItems().setAll(filtered);
         }
     }
