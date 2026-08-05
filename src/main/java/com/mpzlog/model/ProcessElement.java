@@ -88,4 +88,11 @@ public final class ProcessElement {
     public int firstLineNumber() {
         return lines.isEmpty() ? 0 : lines.get(0).getEntry().getLineNumber();
     }
+
+    public boolean hasErrorKey(String key) {
+        for (ErrorElement err : errors) {
+            if (err.getErrorKey().equals(key)) return true;
+        }
+        return false;
+    }
 }

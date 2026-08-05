@@ -157,6 +157,12 @@
     -fx-background-color: #99c4ff !important;
 }
 
+.process-table .scroll-bar:horizontal {
+    -fx-opacity: 0;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+}
+
 /* ---- Bottom panel ---- */
 
 .bottom-panel {
@@ -285,6 +291,16 @@
 .raw-content-list .list-cell:selected:hover {
     -fx-font-family: "Consolas", "Courier New", monospace;
     -fx-font-size: 12px;
+}
+
+/* ---- Loading overlay ---- */
+
+.loading-overlay {
+    -fx-background-color: rgba(255, 255, 255, 0.75);
+}
+
+.loading-overlay .progress-indicator {
+    -fx-progress-color: #2F5D8A;
 }
 
 /* ---- Dialogs ---- */
