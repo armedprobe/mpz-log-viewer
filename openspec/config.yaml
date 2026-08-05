@@ -1,0 +1,52 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+context: |
+  Пиши все артефакты OpenSpec на русском языке.
+  Используй технический, ясный и краткий стиль.
+  Сохраняй названия файлов, команд и API без перевода.
+  Если в проекте есть общепринятые англоязычные термины, оставляй их без перевода.
+  Предпочитай формулировки в повелительном и нормативном стиле для требований.
+
+rules:
+  proposal:
+    - Пиши разделы и пояснения на русском.
+    - Если есть риски или откат, описывай их явно.
+  specs:
+    - Используй русский язык для требований, сценариев и пояснений.
+    - При необходимости оставляй код, идентификаторы и команды без перевода.
+  tasks:
+    - Формулируй задачи по-русски, коротко и однозначно.
+  design:
+    - Описывай архитектуру и решения по-русски.
+
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

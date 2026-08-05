@@ -19,6 +19,7 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -74,6 +75,14 @@ public class GuiApp extends Application {
         Button openButton = new Button("Открыть файл");
         openButton.setOnAction(e -> openFile(stage));
 
+        Button exportButton = new Button("Экспорт");
+        exportButton.setOnAction(e -> {
+            ProcessElement p = vc.getSelectedProcess();
+            if (p != null) {
+                exportProcess(p, stage);
+            }
+        });
+
         processOriginalOrder = new ArrayList<>();
         errorOriginalOrder = new ArrayList<>();
 
@@ -83,7 +92,7 @@ public class GuiApp extends Application {
 
         Scene scene = MainLayoutBuilder.build(
                 stage, vc, processTable, rawContentList, errorTable,
-                statusBar, displayModeLabel, cancelButton, openButton);
+                statusBar, displayModeLabel, cancelButton, openButton, exportButton);
 
         loadingOverlay = createLoadingOverlay();
         StackPane rootStack = new StackPane(scene.getRoot(), loadingOverlay);
@@ -301,6 +310,36 @@ public class GuiApp extends Application {
         rawContentList.getSelectionModel().clearSelection();
         rawContentList.getSelectionModel().select(index);
         rawContentList.scrollTo(index);
+    }
+
+    private void exportProcess(ProcessElement p, Stage stage) {
+        List<String> lines = computeProcessLines(p);
+        if (lines.isEmpty()) {
+            return;
+        }
+
+        String baseName = currentPath != null ? currentPath.getFileName().toString() : "export";
+        int dot = baseName.lastIndexOf('.');
+        if (dot > 0) {
+            baseName = baseName.substring(0, dot);
+        }
+        String pidStr = p.pidLabel();
+        String defaultName = sanitizeFilename(baseName + "-" + pidStr + ".log");
+
+        Path dest = fileService.saveFileDialog(stage, defaultName);
+        if (dest == null) {
+            return;
+        }
+
+        fileService.exportToFile(dest, lines,
+                () -> Platform.runLater(() ->
+                        statusBar.setText(statusBar.getText() + "   |   Экспортирован: " + dest.getFileName())),
+                error -> Platform.runLater(() ->
+                        statusBar.setText(statusBar.getText() + "   |   Ошибка экспорта: " + error)));
+    }
+
+    private static String sanitizeFilename(String name) {
+        return name.replaceAll("[<>:\"/\\\\|?*]", "_");
     }
 
     private List<String> computeProcessLines(ProcessElement p) {

@@ -10,6 +10,7 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -140,6 +141,49 @@ public final class FileService {
         if (bytes < 1024) return bytes + " B";
         if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
         return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
+    }
+
+    public void exportToFile(Path dest, List<String> lines, Runnable onSuccess, Consumer<String> onError) {
+        Thread worker = new Thread(() -> {
+            try {
+                writeLines(dest, lines);
+                if (onSuccess != null) {
+                    onSuccess.run();
+                }
+            } catch (IOException e) {
+                if (onError != null) {
+                    onError.accept(e.getMessage());
+                }
+            }
+        }, "mpz-export-writer");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    static void writeLines(Path dest, List<String> lines) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(dest, StandardCharsets.UTF_8)) {
+            for (int i = 0; i < lines.size(); i++) {
+                writer.write(lines.get(i));
+                if (i + 1 < lines.size()) {
+                    writer.newLine();
+                }
+            }
+        }
+    }
+
+    public Path saveFileDialog(Stage stage, String defaultName) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Экспорт процесса");
+        chooser.setInitialFileName(defaultName);
+        File lastDir = lastDirectory();
+        if (lastDir != null) {
+            chooser.setInitialDirectory(lastDir);
+        }
+        File file = chooser.showSaveDialog(stage);
+        if (file == null) {
+            return null;
+        }
+        return file.toPath();
     }
 
     private File lastDirectory() {

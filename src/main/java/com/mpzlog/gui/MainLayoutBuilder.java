@@ -33,7 +33,8 @@ public final class MainLayoutBuilder {
             Label statusBar,
             Label displayModeLabel,
             Button cancelButton,
-            Button openButton) {
+            Button openButton,
+            Button exportButton) {
 
         ToolBar filterToolbar = new ToolBar(openButton);
         filterToolbar.getStyleClass().add("panel-toolbar");
@@ -58,6 +59,10 @@ public final class MainLayoutBuilder {
         cancelButton.visibleProperty().bind(vc.selectedProcessProperty().isNotNull());
         cancelButton.managedProperty().bind(vc.selectedProcessProperty().isNotNull());
 
+        exportButton.getStyleClass().addAll("toolbar-button", "export-button");
+        exportButton.visibleProperty().bind(vc.selectedProcessProperty().isNotNull());
+        exportButton.managedProperty().bind(vc.selectedProcessProperty().isNotNull());
+
         displayModeLabel.textProperty().bind(Bindings.createStringBinding(() -> {
             ProcessElement p = vc.getSelectedProcess();
             if (p != null) {
@@ -66,7 +71,7 @@ public final class MainLayoutBuilder {
             return "Все строки";
         }, vc.selectedProcessProperty()));
 
-        ToolBar centerToolbar = new ToolBar(displayModeLabel, cancelButton);
+        ToolBar centerToolbar = new ToolBar(displayModeLabel, cancelButton, exportButton);
         centerToolbar.getStyleClass().add("panel-toolbar");
 
         VBox centerBox = new VBox(centerToolbar, rawContentList);
