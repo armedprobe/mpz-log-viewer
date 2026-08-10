@@ -1,5 +1,6 @@
 package com.mpzlog.gui;
 
+import com.mpzlog.model.ErrorElement;
 import com.mpzlog.model.ErrorGroupInfo;
 import com.mpzlog.model.LogEntry;
 import com.mpzlog.model.LogLine;
@@ -176,7 +177,12 @@ public class GuiApp extends Application {
         } else {
             vc.selectProcess(p);
             rawContentList.getItems().setAll(computeProcessLines(p));
-            rawContentList.scrollTo(0);
+            String errKey = vc.getSelectedErrorKey();
+            if (errKey != null) {
+                scrollToProcessError(p, errKey);
+            } else {
+                rawContentList.scrollTo(0);
+            }
         }
         processTable.refresh();
     }
@@ -215,10 +221,15 @@ public class GuiApp extends Application {
             ProcessElement selectedP = vc.getSelectedProcess();
             if (selectedP != null && !selectedP.hasErrorKey(info.getErrorKey())) {
                 vc.clearProcessSelection();
+                selectedP = null;
             }
 
             rawContentList.getItems().setAll(allRawLines);
-            rawContentList.scrollTo(0);
+            if (selectedP != null) {
+                scrollToProcessError(selectedP, info.getErrorKey());
+            } else {
+                rawContentList.scrollTo(0);
+            }
         }
         processTable.refresh();
     }
@@ -305,6 +316,31 @@ public class GuiApp extends Application {
         String target = allRawLines.get(firstLine - 1);
         int index = rawContentList.getItems().indexOf(target);
         if (index < 0) {
+            return;
+        }
+        rawContentList.getSelectionModel().clearSelection();
+        rawContentList.getSelectionModel().select(index);
+        rawContentList.scrollTo(index);
+    }
+
+    private void scrollToProcessError(ProcessElement p, String errorKey) {
+        int firstLine = Integer.MAX_VALUE;
+        for (ErrorElement err : p.getErrors()) {
+            if (err.getErrorKey().equals(errorKey)) {
+                int ln = err.getEntry().getLineNumber();
+                if (ln < firstLine) {
+                    firstLine = ln;
+                }
+            }
+        }
+        if (firstLine == Integer.MAX_VALUE || firstLine > allRawLines.size()) {
+            rawContentList.scrollTo(0);
+            return;
+        }
+        String target = allRawLines.get(firstLine - 1);
+        int index = rawContentList.getItems().indexOf(target);
+        if (index < 0) {
+            rawContentList.scrollTo(0);
             return;
         }
         rawContentList.getSelectionModel().clearSelection();
