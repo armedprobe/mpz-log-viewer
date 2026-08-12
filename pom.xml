@@ -67,6 +67,34 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <executions>
+                    <execution>
+                        <id>jlink</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jlink</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>${main.class}</mainClass>
+                            <jlinkImageName>${project.artifactId}</jlinkImageName>
+                            <launcher>${project.artifactId}</launcher>
+                            <jlinkArgs>
+                                <arg>--add-modules</arg>
+                                <arg>ALL-MODULE-PATH</arg>
+                                <arg>--strip-debug</arg>
+                                <arg>--compress=2</arg>
+                                <arg>--no-header-files</arg>
+                                <arg>--no-man-pages</arg>
+                            </jlinkArgs>
+                            <forceLink>true</forceLink>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>com.akathist.maven.plugins.launch4j</groupId>
                 <artifactId>launch4j-maven-plugin</artifactId>
                 <version>2.5.2</version>
@@ -84,7 +112,8 @@
                             <launch4jDir>${env.LOCALAPPDATA}/launch4j</launch4jDir>
                             <jre>
                                 <minVersion>21</minVersion>
-                                <path>%JAVA_HOME%;%PATH%</path>
+                                <path>${project.artifactId}</path>
+                                <requires64Bit>true</requires64Bit>
                             </jre>
                             <stayAlive>false</stayAlive>
                         </configuration>

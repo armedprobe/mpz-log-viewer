@@ -12,10 +12,16 @@
 - GUI: GUI-only на JavaFX 22, подключается как Maven-зависимость.
 - Тема оформления: AtlantaFX PrimerLight, Inline-стили в Java-коде не использовать.
 - Тесты: JUnit.
-- `mvn clean package` дополнительно собирает `.exe` через launch4j. `.exe` собирается с GUI-заголовком (`headerType=gui`).
+- Проект использует Java Platform Module System (module-info.java).
+- `mvn clean package` выполняет:
+  1. Компиляция и тесты
+  2. Сборка modular JAR
+  3. `jlink` — создание самодостаточного JRE-образа (`target/mpz-log-viewer/`) с JavaFX-модулями и приложением
+  4. `launch4j` — сборка `.exe` (использует `java` из jlink-образа, JDK/JRE на машине не требуется)
   ```bash
   mvn clean package
-  java -jar target/mpz-log-viewer-1.0.0.jar                     # GUI (главный класс gui.GuiApp), JDK 21+
+  target/mpz-log-viewer/bin/mpz-log-viewer.bat                 # запуск через jlink-лаунчер
+  start.bat                                                      # или через корневой батник
   ```
 
 ### Структура:
