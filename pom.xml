@@ -12,13 +12,29 @@
     <description>Утилита для чтения и анализа лог-файлов МПЗ</description>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <javafx.version>22</javafx.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <main.class>com.mpzlog.gui.GuiApp</main.class>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.github.mkpaz</groupId>
+            <artifactId>atlantafx-base</artifactId>
+            <version>2.1.0</version>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -32,7 +48,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.12.1</version>
                 <configuration>
                     <fork>true</fork>
                     <encoding>UTF-8</encoding>
@@ -67,7 +83,7 @@
                             <jar>${project.build.directory}/${project.build.finalName}.jar</jar>
                             <launch4jDir>${env.LOCALAPPDATA}/launch4j</launch4jDir>
                             <jre>
-                                <minVersion>8.0.0</minVersion>
+                                <minVersion>21</minVersion>
                                 <path>%JAVA_HOME%;%PATH%</path>
                             </jre>
                             <stayAlive>false</stayAlive>

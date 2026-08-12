@@ -16,7 +16,6 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontPosture;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -37,6 +36,7 @@ public final class ProcessTableHelper {
         TableView<ProcessElement> table = new TableView<>();
         table.getStyleClass().add("process-table");
         table.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+        table.setStyle("-fx-cell-size: " + GuiConstants.CELL_HEIGHT + "px;");
 
         TableColumn<ProcessElement, ProcessElement> iconCol = createIconColumn();
         TableColumn<ProcessElement, ProcessElement> pidCol = createPidColumn();
@@ -120,7 +120,7 @@ public final class ProcessTableHelper {
 
     private static TableColumn<ProcessElement, ProcessElement> createPidColumn() {
         double pidWidth = IconFactory.measureTextWidth("88888888",
-                Font.font("Consolas", FontPosture.REGULAR, 11)) + 18;
+                GuiConstants.MONO_FONT) + 18;
         TableColumn<ProcessElement, ProcessElement> col = new TableColumn<>("PID");
         col.setPrefWidth(pidWidth);
         col.setMinWidth(pidWidth);
@@ -134,7 +134,7 @@ public final class ProcessTableHelper {
                     setText(null);
                     setTooltip(null);
                 } else {
-                    setFont(Font.font("Consolas", FontPosture.REGULAR, 11));
+                    setFont(GuiConstants.MONO_FONT);
                     setText(p.pidLabel());
                     setTooltip(new Tooltip(p.getStatus().getLabel()));
                 }
@@ -161,7 +161,7 @@ public final class ProcessTableHelper {
                 if (empty || p == null) {
                     setText(null);
                 } else {
-                    setFont(Font.font(11));
+                    setFont(GuiConstants.MONO_FONT);
                     String pname = p.getProcessName();
                     setText(pname != null ? pname : "?");
                 }
@@ -188,6 +188,7 @@ public final class ProcessTableHelper {
             @Override
             protected void updateItem(ProcessElement p, boolean empty) {
                 super.updateItem(p, empty);
+                setFont(GuiConstants.MONO_FONT);
                 setAlignment(Pos.CENTER_RIGHT);
                 setText(empty || p == null ? null : String.valueOf(reqRespCount(p)));
             }

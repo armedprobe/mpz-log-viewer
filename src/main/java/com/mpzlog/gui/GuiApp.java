@@ -1,5 +1,6 @@
 package com.mpzlog.gui;
 
+import atlantafx.base.theme.PrimerLight;
 import com.mpzlog.model.ErrorElement;
 import com.mpzlog.model.ErrorGroupInfo;
 import com.mpzlog.model.LogEntry;
@@ -59,6 +60,8 @@ public class GuiApp extends Application {
         settings = new GuiSettings();
         vc = new ViewController();
         fileService = new FileService(settings);
+
+        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
         statusBar = new Label("Файл не выбран");
         statusBar.getStyleClass().add("status-bar");
@@ -165,7 +168,6 @@ public class GuiApp extends Application {
         if (vc.isProcessSelected()) {
             return;
         }
-        rawContentList.getItems().setAll(allRawLines);
         scrollToProcess(p);
     }
 

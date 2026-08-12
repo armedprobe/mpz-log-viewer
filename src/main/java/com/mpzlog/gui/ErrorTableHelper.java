@@ -31,6 +31,7 @@ public final class ErrorTableHelper {
 
         TableView<ErrorGroupInfo> table = new TableView<>();
         table.getStyleClass().add("error-table");
+        table.setStyle("-fx-cell-size: " + GuiConstants.CELL_HEIGHT + "px;");
         table.setPlaceholder(new Label("Ошибки не найдены"));
 
         TableColumn<ErrorGroupInfo, Number> errCountCol = new TableColumn<>("Число ошибок");
@@ -42,6 +43,7 @@ public final class ErrorTableHelper {
             @Override
             protected void updateItem(Number item, boolean empty) {
                 super.updateItem(item, empty);
+                setFont(GuiConstants.MONO_FONT);
                 setAlignment(Pos.CENTER);
                 setText(empty || item == null ? null : String.valueOf(item.intValue()));
             }
@@ -62,6 +64,7 @@ public final class ErrorTableHelper {
                 } else {
                     if (text == null) {
                         text = new Text();
+                        text.setFont(GuiConstants.MONO_FONT);
                         text.wrappingWidthProperty().bind(col.widthProperty().subtract(6));
                     }
                     text.setText(item);

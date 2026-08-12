@@ -52,8 +52,7 @@ public final class MainLayoutBuilder {
 
         statusBar.setMaxWidth(Double.MAX_VALUE);
 
-        displayModeLabel.getStyleClass().add("toolbar-label");
-        displayModeLabel.setStyle("-fx-font-weight: bold;");
+        displayModeLabel.getStyleClass().addAll("toolbar-label", "toolbar-label-bold");
 
         cancelButton.getStyleClass().addAll("toolbar-button", "cancel-button");
         cancelButton.visibleProperty().bind(vc.selectedProcessProperty().isNotNull());
@@ -86,8 +85,6 @@ public final class MainLayoutBuilder {
         root.setBottom(bottomWithStatus);
 
         Scene scene = new Scene(root, 1000, 650);
-        scene.getStylesheets().add(
-                GuiApp.class.getResource("/gui/light_theme.css").toExternalForm());
         scene.getStylesheets().add(
                 GuiApp.class.getResource("/gui/app.css").toExternalForm());
 

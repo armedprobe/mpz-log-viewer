@@ -1,161 +1,62 @@
-/* MPZ Log Viewer - custom overrides for JMetro theme */
+/* MPZ Log Viewer — custom styles for AtlantaFX PrimerLight */
 
-/* ---- Panel toolbars ---- */
+/* Layout panels */
+
+.left-panel {
+    -fx-background-color: -color-bg-default;
+    -fx-border-color: transparent -color-border-muted transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+
+.center-panel {
+    -fx-background-color: -color-bg-default;
+    -fx-border-color: transparent transparent transparent -color-border-muted;
+    -fx-border-width: 0 0 0 1;
+}
+
+.bottom-panel {
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: -color-border-muted transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 8;
+}
+
+/* Toolbar */
 
 .panel-toolbar {
-    -fx-padding: 6 10 6 10;
+    -fx-padding: 6 10;
     -fx-background-color: transparent;
-}
-
-.toolbar-button {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-padding: 2 6 2 6;
-    -fx-cursor: hand;
-    -fx-font-size: 14px;
-    -fx-text-fill: #5a5e66;
-}
-
-.toolbar-button:hover {
-    -fx-text-fill: #1c1e21;
-    -fx-background-color: #f0f2f5;
-    -fx-background-radius: 4;
-}
-
-.cancel-button {
-    -fx-font-weight: bold;
-    -fx-font-size: 16px;
 }
 
 .toolbar-label {
     -fx-font-size: 12px;
-    -fx-text-fill: #5a5e66;
-    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-text-fill: -color-fg-muted;
 }
 
-/* ---- Status bar ---- */
+.toolbar-label-bold {
+    -fx-font-weight: bold;
+}
+
+/* Status bar */
 
 .status-bar {
     -fx-padding: 2 10 8 10;
-    -fx-text-fill: #6a6e76;
-    -fx-font-size: 12px;
-    -fx-font-family: "Segoe UI", sans-serif;
-}
-
-/* ---- Left panel ---- */
-
-.left-panel {
-    -fx-background-color: #ffffff;
-    -fx-border-color: transparent #e1e4e8 transparent transparent;
-    -fx-border-width: 0 0 0 1;
-    -fx-padding: 0;
-}
-
-.left-panel .label {
-    -fx-text-fill: #5a5e66;
-    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-text-fill: -color-fg-subtle;
     -fx-font-size: 12px;
 }
 
-.left-panel .list-view {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-}
-
-.left-panel .list-cell {
-    -fx-padding: 3 6 3 6;
-    -fx-font-size: 12px;
-    -fx-text-fill: #1c1e21;
-    -fx-font-family: "Segoe UI", sans-serif;
-}
-
-.left-panel .list-cell:hover {
-    -fx-background-color: #f0f2f5;
-}
-
-.left-panel .list-cell:selected,
-.left-panel .list-cell:selected:focused,
-.left-panel .list-cell:focused:selected,
-.left-panel > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:selected,
-.left-panel > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:selected:focused {
-    -fx-background-color: #b3d4ff !important;
-}
-
-.left-panel .list-cell:focused,
-.left-panel .list-cell:selected:focused,
-.left-panel .list-cell:hover:focused {
-    -fx-font-family: "Segoe UI", sans-serif;
-    -fx-font-size: 12px;
-}
-
-/* ---- Process table ---- */
-
-.process-table {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-}
-
-.process-table .column-header-background {
-    -fx-padding: 0 0 0 0;
-}
-
-.process-table .column-header .label {
-    -fx-font-family: "Segoe UI", sans-serif;
-    -fx-font-size: 12px;
-}
-
-.process-table .table-column {
-    -fx-font-size: 12px;
-    -fx-padding: 2 4 2 6;
-}
-
-.process-table .table-row-cell {
-    -fx-padding: 0;
-    -fx-font-family: "Segoe UI", sans-serif;
-    -fx-font-size: 12px;
-}
+/* Active process highlight (pseudo-class set from Java) */
 
 .process-table .table-row-cell:active-process {
-    -fx-background-color: #cfe2ff;
+    -fx-background-color: -color-accent-subtle;
     -fx-font-weight: bold;
 }
 
 .process-table .table-row-cell:active-process .table-cell {
-    -fx-background-color: #cfe2ff;
+    -fx-background-color: -color-accent-subtle;
 }
 
-.process-table .table-cell {
-    -fx-font-family: "Segoe UI", sans-serif;
-    -fx-font-size: 12px;
-}
-
-.process-table .table-cell:selected,
-.process-table .table-cell:focused,
-.process-table .table-cell:selected:focused,
-.process-table .table-cell:hover,
-.process-table .table-cell:selected:hover {
-    -fx-font-family: "Segoe UI", sans-serif;
-    -fx-font-size: 12px;
-}
-
-.process-table .table-row-cell:selected,
-.process-table .table-row-cell:selected .table-cell,
-.process-table > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected,
-.process-table > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected .table-cell,
-.process-table > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected > .table-cell,
-.process-table:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected,
-.process-table:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected .table-cell,
-.process-table:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected > .table-cell {
-    -fx-background-color: #b3d4ff !important;
-    -fx-table-cell-border-color: transparent;
-}
-
-.process-table .table-row-cell:selected:hover,
-.process-table .table-row-cell:selected:hover .table-cell,
-.process-table > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected:hover,
-.process-table > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected:hover .table-cell {
-    -fx-background-color: #99c4ff !important;
-}
+/* Hide horizontal scrollbar on process table */
 
 .process-table .scroll-bar:horizontal {
     -fx-opacity: 0;
@@ -163,156 +64,19 @@
     -fx-max-height: 0;
 }
 
-/* ---- Bottom panel ---- */
-
-.bottom-panel {
-    -fx-background-color: #fafafa;
-    -fx-border-color: #e1e4e8 transparent transparent transparent;
-    -fx-border-width: 1 0 0 0;
-    -fx-padding: 0;
-}
-
-.error-table {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-font-family: "Consolas", "Courier New", monospace;
-    -fx-font-size: 12px;
-}
-
-.error-table .table-column {
-    -fx-font-size: 12px;
-    -fx-padding: 2 4 2 6;
-}
-
-.error-table .table-row-cell {
-    -fx-padding: 0;
-    -fx-font-family: "Consolas", "Courier New", monospace;
-    -fx-font-size: 12px;
-}
-
-.error-table .table-row-cell:hover {
-    -fx-background-color: #f0f2f5;
-}
-
-.error-table .table-row-cell:selected {
-    -fx-background-color: #d6e4ff;
-}
-
-.error-table .table-cell {
-    -fx-font-family: "Consolas", "Courier New", monospace;
-    -fx-font-size: 12px;
-}
-
-.error-table .table-cell:selected,
-.error-table .table-cell:focused,
-.error-table .table-cell:selected:focused,
-.error-table .table-cell:hover,
-.error-table .table-cell:selected:hover {
-    -fx-font-family: "Consolas", "Courier New", monospace;
-    -fx-font-size: 12px;
-}
-
-.error-table .table-row-cell:selected,
-.error-table .table-row-cell:selected .table-cell,
-.error-table > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected,
-.error-table > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected .table-cell,
-.error-table > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected > .table-cell,
-.error-table:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected,
-.error-table:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected .table-cell,
-.error-table:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected > .table-cell {
-    -fx-background-color: #b3d4ff !important;
-    -fx-table-cell-border-color: transparent;
-}
-
-.error-table .table-row-cell:selected:hover,
-.error-table .table-row-cell:selected:hover .table-cell,
-.error-table > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected:hover,
-.error-table > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected:hover .table-cell {
-    -fx-background-color: #99c4ff !important;
-}
-
-.error-table .column-header-background {
-    -fx-padding: 0 0 0 0;
-}
-
-.error-table .column-header .label {
-    -fx-font-family: "Consolas", "Courier New", monospace;
-    -fx-font-size: 12px;
-}
-
-/* ---- Center panel ---- */
-
-.center-panel {
-    -fx-background-color: #ffffff;
-    -fx-border-color: transparent transparent transparent #e1e4e8;
-    -fx-border-width: 0 0 0 1;
-    -fx-padding: 0;
-}
-
-.center-panel .label {
-    -fx-text-fill: #5a5e66;
-    -fx-font-family: "Segoe UI", sans-serif;
-    -fx-font-size: 12px;
-}
-
-/* ---- Raw content list ---- */
-
-.raw-content-list {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-font-family: "Consolas", "Courier New", monospace;
-    -fx-font-size: 12px;
-}
+/* Raw content list */
 
 .raw-content-list .list-cell {
-    -fx-padding: 3 6 3 6;
-    -fx-text-fill: #1c1e21;
-    -fx-font-family: "Consolas", "Courier New", monospace;
-    -fx-font-size: 12px;
+    -fx-text-fill: -color-fg-default;
+    -fx-padding: 0 4;
 }
 
-.raw-content-list .list-cell:hover {
-    -fx-background-color: #f0f2f5;
-}
-
-.raw-content-list .list-cell:selected,
-.raw-content-list .list-cell:selected:focused,
-.raw-content-list .list-cell:focused:selected,
-.raw-content-list > .virtual-flow > .clipped-container > .sheet > .list-cell:selected,
-.raw-content-list > .virtual-flow > .clipped-container > .sheet > .list-cell:selected:focused,
-.raw-content-list:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:selected {
-    -fx-background-color: #b3d4ff !important;
-}
-
-.raw-content-list .list-cell:selected,
-.raw-content-list .list-cell:focused,
-.raw-content-list .list-cell:selected:focused,
-.raw-content-list .list-cell:hover,
-.raw-content-list .list-cell:selected:hover {
-    -fx-font-family: "Consolas", "Courier New", monospace;
-    -fx-font-size: 12px;
-}
-
-/* ---- Loading overlay ---- */
+/* Loading overlay */
 
 .loading-overlay {
     -fx-background-color: rgba(255, 255, 255, 0.75);
 }
 
 .loading-overlay .progress-indicator {
-    -fx-progress-color: #2F5D8A;
-}
-
-/* ---- Dialogs ---- */
-
-.dialog-pane {
-    -fx-background-color: #ffffff;
-}
-
-.dialog-pane .header-panel {
-    -fx-background-color: #ffffff;
-}
-
-.dialog-pane .button-bar .container {
-    -fx-background-color: #ffffff;
+    -fx-progress-color: -color-accent-emphasis;
 }

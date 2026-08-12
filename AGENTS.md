@@ -7,15 +7,15 @@
 
 ### Сборка и закпуск:
 
-- Платформа: Java 8 (target 1.8).
+- Платформа: Java 21 (target 21).
 - Сборка и зависимости: Maven.
-- GUI: GUI-only на JavaFX 8, встроенная в JDK 8 — запуск окна только под JDK/JRE 8. 
-- Тема оформления: JMetro, Inline-стили в Java-коде не использовать.
+- GUI: GUI-only на JavaFX 22, подключается как Maven-зависимость.
+- Тема оформления: AtlantaFX PrimerLight, Inline-стили в Java-коде не использовать.
 - Тесты: JUnit.
 - `mvn clean package` дополнительно собирает `.exe` через launch4j. `.exe` собирается с GUI-заголовком (`headerType=gui`).
   ```bash
   mvn clean package
-  java -jar target/mpz-log-viewer-1.0.0.jar                     # GUI (главный класс gui.GuiApp), только JDK 8
+  java -jar target/mpz-log-viewer-1.0.0.jar                     # GUI (главный класс gui.GuiApp), JDK 21+
   ```
 
 ### Структура:
@@ -23,9 +23,10 @@
 - `gui/GuiApp.java` — главный класс (JavaFX), оркестратор: создаёт компоненты, настраивает коллбэки, управляет загрузкой. При запуске сразу запрашивается открытие лог-файла (при отмене приложение завершается). Статус-бар показывает путь к файлу, размер, дату создания, количество строк/процессов/ошибок. Стили — `src/main/resources/gui/app.css`. Между запусками сохраняется положение/размер окна и состояние «максимизировано/обычное» (`GuiSettings`, Windows Preferences/реестр); при максимизации обычные (немасимизированные) границы не перезаписываются. Во время загрузки и парсинга файла отображается спиннер поверх всего окна (`.loading-overlay`).
 - `gui/ViewController.java` — единое состояние окна: `selectedProcess` (выделенный процесс), `selectedErrorKey` (выделенная ошибка). Через JavaFX Properties компоненты самостоятельно подписываются на изменения.
 - `gui/GuiSettings.java` — сохранение состояния GUI (последняя папка, границы и состояние «максимизировано/обычное» окна) через `java.util.prefs.Preferences`
-- `gui/ProcessTableHelper.java` — фабрика таблицы процессов (колонки, cell factories, контекстное меню, подсветка через `:active-process`).
-- `gui/ErrorTableHelper.java` — фабрика таблицы ошибок (колонки, многострочный текст, контекстное меню, подсветка через `:active-error`).
-- `gui/RawContentListHelper.java` — фабрика списка строк (cell factory, контекстное меню Copy/GoTo, scrollbar listener).
+- `gui/GuiConstants.java` — константы GUI: моноширинный шрифт `Consolas` 12px, высота строк 17px.
+- `gui/ProcessTableHelper.java` — фабрика таблицы процессов (колонки, cell factories, контекстное меню, подсветка через `:active-process`, шрифт и высота строк через `GuiConstants`).
+- `gui/ErrorTableHelper.java` — фабрика таблицы ошибок (колонки, многострочный текст, контекстное меню, подсветка через `:active-error`, шрифт и высота строк через `GuiConstants`).
+- `gui/RawContentListHelper.java` — фабрика списка строк (cell factory, контекстное меню Copy/GoTo, scrollbar listener, шрифт и высота строк через `GuiConstants`).
 - `gui/MainLayoutBuilder.java` — сборка компоновки окна (BorderPane, панели, тулбары, binding `displayModeLabel`/`cancelButton`).
 - `gui/FileService.java` — чтение файла и анализ в фоновых потоках с seq-защитой, `AnalysisResult`.
 - `gui/WindowStateManager.java` — сохранение/восстановление границ окна.
@@ -208,4 +209,4 @@
 
 ## TODO / Возможные улучшения
 
-- [ ] Выгрузка записей процесса в отдельный файл
+- [ ] Переключение тем (светлая/тёмная) в рантайме

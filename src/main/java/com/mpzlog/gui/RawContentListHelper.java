@@ -23,8 +23,12 @@ public final class RawContentListHelper {
 
         ListView<String> list = new ListView<>();
         list.setEditable(false);
+        list.setFixedCellSize(GuiConstants.CELL_HEIGHT);
         list.getStyleClass().add("raw-content-list");
         list.setCellFactory(lv -> new ListCell<String>() {
+            {
+                setFont(GuiConstants.MONO_FONT);
+            }
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
